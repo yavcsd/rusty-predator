@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (2026-11-03)
 
 - **Renamed to Rusty Predator** (it was Predator Lite). The program is now `rusty-predator.exe`
   and the project is at <https://github.com/yavcsd/rusty-predator>. Settings move to
