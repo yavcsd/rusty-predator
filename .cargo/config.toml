@@ -1,4 +1,4 @@
-# Link the C runtime statically so predator-lite.exe runs on any Windows 10/11 PC without the
+# Link the C runtime statically so rusty-predator.exe runs on any Windows 10/11 PC without the
 # Visual C++ Redistributable (VCRUNTIME140.dll).
 [target.x86_64-pc-windows-msvc]
 rustflags = ["-C", "target-feature=+crt-static"]

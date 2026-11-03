@@ -1,34 +1,34 @@
-# Predator Lite
+# Rusty Predator
 
 A tiny, open-source replacement for **Acer PredatorSense** on Windows: fan control and fan
 curves, Turbo / Balanced / Eco modes, GPU overclock and GPU mode, keyboard lighting and the
 laptop's other firmware settings, in one ~460 KB program with no services, no drivers and no
-runtime.
+runtime. It was called Predator Lite up to version 0.1.1.
 
-[![CI](https://github.com/yavcsd/predator-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/yavcsd/predator-lite/actions/workflows/ci.yml)
+[![CI](https://github.com/yavcsd/rusty-predator/actions/workflows/ci.yml/badge.svg)](https://github.com/yavcsd/rusty-predator/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platform: Windows 10/11](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-informational)
 
 > [!WARNING]
 > ## This project was developed with Claude Code
 >
-> Predator Lite was written with [Claude Code](https://claude.com/claude-code), Anthropic's AI
+> Rusty Predator was written with [Claude Code](https://claude.com/claude-code), Anthropic's AI
 > coding assistant. The code, the firmware research, the tests and this documentation were
 > produced with AI assistance. Everything was tested on one laptop, an Acer Predator Triton 500
 > (PT515-51), and only on that one.
 >
-> Predator Lite changes fan, power and firmware settings. Read the code if you want to be sure of
+> Rusty Predator changes fan, power and firmware settings. Read the code if you want to be sure of
 > what it does, keep an eye on temperatures the first time you use it, and use it at your own
 > risk. As the [license](LICENSE) says, it comes with no warranty.
 
-<p align="center"><img src="docs/images/main-window.png" alt="Predator Lite main window" width="462"></p>
+<p align="center"><img src="docs/images/main-window.png" alt="Rusty Predator main window" width="462"></p>
 
-> Predator Lite is an independent project. It is not made, endorsed or supported by Acer.
+> Rusty Predator is an independent project. It is not made, endorsed or supported by Acer.
 > "Acer", "Predator" and "PredatorSense" are trademarks of Acer Inc.
 
 ## Contents
 
-- [Why Predator Lite](#why-predator-lite)
+- [Why Rusty Predator](#why-rusty-predator)
 - [Features](#features)
 - [Supported laptops](#supported-laptops)
 - [Quick start](#quick-start)
@@ -37,9 +37,9 @@ runtime.
 - [Contributing](#contributing)
 - [License](#license)
 
-## Why Predator Lite
+## Why Rusty Predator
 
-| | PredatorSense 3 | Predator Lite |
+| | PredatorSense 3 | Rusty Predator |
 |---|---|---|
 | Download / install size | ~250 MB (UWP app, 2 MSIs, services, drivers) | one ~460 KB `.exe` |
 | Background processes | service + agent + admin agent + app | 1 process, in the tray |
@@ -64,7 +64,7 @@ runtime.
   - Settings that the BIOS setup can also change are read from the firmware instead of being
     overwritten.
 - **Honest fan numbers.** The firmware's "custom fan %" is not a duty cycle: 60 % runs the CPU fan
-  at 35 %. Predator Lite converts through a table measured on real hardware, so every percentage
+  at 35 %. Rusty Predator converts through a table measured on real hardware, so every percentage
   you see or set is the fan's real duty, and the readout next to each RPM confirms it.
 - **Built from the original, verified on hardware.** The firmware calls were reverse-engineered
   from PredatorSense itself and checked one by one on a real laptop. That includes details other
@@ -126,10 +126,10 @@ runtime.
   app when it is closed.
 - Tray icon with a quick menu: modes, the Turbo-button watcher and Exit. Closing the window only
   hides it to the tray.
-- Settings are saved to `%APPDATA%\PredatorLite\settings.ini` and restored at start and after
+- Settings are saved to `%APPDATA%\RustyPredator\settings.ini` and restored at start and after
   sleep.
 
-<p align="center"><img src="docs/images/tray-menu.png" alt="Predator Lite tray menu" width="206"></p>
+<p align="center"><img src="docs/images/tray-menu.png" alt="Rusty Predator tray menu" width="206"></p>
 
 ## Supported laptops
 
@@ -145,8 +145,8 @@ Two things were measured on the PT515-51 and may differ on other models:
   percentage shown. The duty readout shows the real value.
 - **PredatorSense button scan code.**
 
-**Help add your laptop.** In a command prompt in the Predator Lite folder, run
-`predator-lite.exe --status report.txt` (it only reads the hardware). Accept the administrator
+**Help add your laptop.** In a command prompt in the Rusty Predator folder, run
+`rusty-predator.exe --status report.txt` (it only reads the hardware). Accept the administrator
 prompt, then open an issue with `report.txt` and your model name.
 
 **Known limitations**
@@ -159,26 +159,26 @@ prompt, then open an issue with `report.txt` and your model name.
 
 ## Quick start
 
-1. Download `predator-lite.zip` from [Releases](https://github.com/yavcsd/predator-lite/releases)
-   and unzip it somewhere permanent, e.g. `C:\Tools\Predator Lite`. You can also
+1. Download `rusty-predator.zip` from [Releases](https://github.com/yavcsd/rusty-predator/releases)
+   and unzip it somewhere permanent, e.g. `C:\Tools\Rusty Predator`. You can also
    [build it yourself](#building-from-source).
 2. **Exit PredatorSense** if it is installed. Two programs controlling the same fans fight each
    other. See [Installation](docs/installation.md#coming-from-predatorsense).
-3. Run `predator-lite.exe` and accept the administrator prompt. The firmware only answers
+3. Run `rusty-predator.exe` and accept the administrator prompt. The firmware only answers
    administrators. The window opens and an icon appears in the tray.
 4. Change what you like. Your choices are saved and applied again at every start. Until you
-   change something, Predator Lite only reads the hardware.
+   change something, Rusty Predator only reads the hardware.
 5. Optional:
    - Start it with Windows: [Start at logon](docs/installation.md#start-at-logon).
    - Make the PredatorSense button open it:
      [PredatorSense button setup](docs/predatorsense-button.md).
 
 ```
-predator-lite.exe                  open the window (and the tray icon)
-predator-lite.exe --hidden         start in the tray only
-predator-lite.exe --toggle         show or hide a running instance, or start with the window open
+rusty-predator.exe                  open the window (and the tray icon)
+rusty-predator.exe --hidden         start in the tray only
+rusty-predator.exe --toggle         show or hide a running instance, or start with the window open
                                    (used by the button setup)
-predator-lite.exe --status FILE    write a read-only hardware report
+rusty-predator.exe --status FILE    write a read-only hardware report
 ```
 
 ## Guides
@@ -187,7 +187,7 @@ predator-lite.exe --status FILE    write a read-only hardware report
 |---|---|
 | [Installation](docs/installation.md) | Requirements, first start, start at logon, updating, uninstalling |
 | [User guide](docs/user-guide.md) | Every control in the window, the modes and fan curves, tray, troubleshooting |
-| [PredatorSense button](docs/predatorsense-button.md) | Make the button open Predator Lite, even when it is closed |
+| [PredatorSense button](docs/predatorsense-button.md) | Make the button open Rusty Predator, even when it is closed |
 | [Settings file](docs/settings-file.md) | Every key in `settings.ini`, including editable fan curves |
 | [Firmware interface](docs/firmware-interface.md) | The decoded Acer WMI calls, for developers and other tools |
 | [Developer guide](docs/developer-guide.md) | Code layout, tests, research tools, adding a laptop model |
@@ -197,10 +197,10 @@ predator-lite.exe --status FILE    write a read-only hardware report
 You need [Rust](https://rustup.rs) (stable, MSVC toolchain) on Windows 10/11.
 
 ```
-git clone https://github.com/yavcsd/predator-lite.git
-cd predator-lite
+git clone https://github.com/yavcsd/rusty-predator.git
+cd rusty-predator
 cargo test             # unit tests against a simulated firmware: no admin rights, no hardware access
-cargo build --release  # target\release\predator-lite.exe
+cargo build --release  # target\release\rusty-predator.exe
 ```
 
 The executable links the C runtime statically and asks for administrator rights through its
@@ -221,5 +221,5 @@ Changes are listed in the [changelog](CHANGELOG.md).
 
 ## License
 
-[MIT](LICENSE). Predator Lite contains no Acer code. It talks to the firmware interface that the
+[MIT](LICENSE). Rusty Predator contains no Acer code. It talks to the firmware interface that the
 laptop's BIOS exposes to Windows.

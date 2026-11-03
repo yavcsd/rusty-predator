@@ -1,9 +1,9 @@
 //! Read-only: poll Turbo-related firmware state every 200 ms for 40 s and log every change,
 //! to see what the Turbo button does by itself. Run elevated: `watch_turbo_state.exe` <report-file>
 
-use predator_lite::controller::Backend;
-use predator_lite::protocol::{decode_sensor, format_sensor, Method, Sensor};
-use predator_lite::wmi::{init_security, Wmi};
+use rusty_predator::controller::Backend;
+use rusty_predator::protocol::{decode_sensor, format_sensor, Method, Sensor};
+use rusty_predator::wmi::{init_security, Wmi};
 use std::time::{Duration, Instant};
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 

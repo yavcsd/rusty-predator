@@ -3,23 +3,23 @@
 //! Results are checked independently with `powercfg`, and the active power plan is put back at
 //! the end (also after a failure). No firmware setting is written.
 //!
-//! Run elevated, with Predator Lite closed: `system_integration_test.exe <report-file>`.
+//! Run elevated, with Rusty Predator closed: `system_integration_test.exe <report-file>`.
 //! Not part of the shipped program.
 
-use predator_lite::controller::{Backend, Capabilities, Controller, EcoLimiter};
-use predator_lite::eco_limits::WindowsEcoLimiter;
-use predator_lite::protocol::{format_sensor, Method, Sensor, PROFILE_GET};
-use predator_lite::settings::Settings;
-use predator_lite::status_report;
-use predator_lite::wmi::{init_security, EventStream, Wmi};
+use rusty_predator::controller::{Backend, Capabilities, Controller, EcoLimiter};
+use rusty_predator::eco_limits::WindowsEcoLimiter;
+use rusty_predator::protocol::{format_sensor, Method, Sensor, PROFILE_GET};
+use rusty_predator::settings::Settings;
+use rusty_predator::status_report;
+use rusty_predator::wmi::{init_security, EventStream, Wmi};
 use std::fmt::Write as _;
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::Instant;
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
-const ECO_PLAN: &str = "Predator Lite Eco";
-const OLD_ECO_PLAN: &str = "Predator Lite Quiet";
+const ECO_PLAN: &str = "Rusty Predator Eco";
+const OLD_ECO_PLAN: &str = "Predator Lite Eco";
 const WINDOWS_BALANCED: &str = "381b4222-f694-41f0-9685-ff5bb260df2e";
 /// `powercfg` aliases: processor power management, processor performance boost mode.
 const BOOST_SETTING: [&str; 2] = ["SUB_PROCESSOR", "PERFBOOSTMODE"];
@@ -104,9 +104,9 @@ fn boost_mode(plan: &str) -> Option<(u32, u32)> {
     }
 }
 
-/// `%APPDATA%\PredatorLite\eco_prev_plan`.
+/// `%APPDATA%\RustyPredator\eco_prev_plan`.
 fn prev_plan_file() -> PathBuf {
-    PathBuf::from(std::env::var_os("APPDATA").unwrap_or_default()).join("PredatorLite").join("eco_prev_plan")
+    PathBuf::from(std::env::var_os("APPDATA").unwrap_or_default()).join("RustyPredator").join("eco_prev_plan")
 }
 
 /// The GUID the prev-plan file holds (32 hex digits), formatted like `powercfg` prints it.

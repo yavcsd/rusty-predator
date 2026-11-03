@@ -20,7 +20,7 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 /// Volatile registry key (Windows drops it at the next restart) holding the GPU mode chosen in
 /// this Windows session. HKLM, like the firmware setting it mirrors: it is machine-wide and a
 /// sign-out must not lose it.
-const PENDING_GPU_MODE_KEY: PCWSTR = w!("SOFTWARE\\PredatorLite");
+const PENDING_GPU_MODE_KEY: PCWSTR = w!("SOFTWARE\\RustyPredator");
 const PENDING_GPU_MODE_VALUE: PCWSTR = w!("PendingGpuMode");
 /// `SYSTEM_POWER_STATUS::BatteryFlag`: no system battery.
 const BATTERY_FLAG_NONE: u8 = 128;
@@ -167,7 +167,7 @@ mod tests {
         use windows::core::HSTRING;
         use windows::Win32::System::Registry::{RegDeleteKeyW, HKEY_CURRENT_USER};
         // HKCU so the test needs no administrator rights; the key is removed afterwards.
-        let subkey = HSTRING::from(format!("Software\\PredatorLiteTest{}", std::process::id()));
+        let subkey = HSTRING::from(format!("Software\\RustyPredatorTest{}", std::process::id()));
         let subkey = PCWSTR(subkey.as_ptr());
         let name = w!("Value");
         assert_eq!(read_dword(HKEY_CURRENT_USER, subkey, name), None);

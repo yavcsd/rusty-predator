@@ -3,9 +3,9 @@
 //! Run elevated with the app closed: `turbo_rearm_probe.exe` <report-file>
 //! See `Controller::set_misc` and `poll_turbo_button` for what the app does about it.
 
-use predator_lite::controller::Backend;
-use predator_lite::protocol::{decode_misc, fan_behavior_input, FanGroup, FanMode, Method, MiscSetting};
-use predator_lite::wmi::{init_security, Wmi};
+use rusty_predator::controller::Backend;
+use rusty_predator::protocol::{decode_misc, fan_behavior_input, FanGroup, FanMode, Method, MiscSetting};
+use rusty_predator::wmi::{init_security, Wmi};
 use std::io::Write as _;
 use std::time::{Duration, Instant};
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};

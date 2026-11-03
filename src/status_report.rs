@@ -25,7 +25,7 @@ pub fn report<B: Backend>(hw: B) -> (String, B) {
     let caps = &ctl.caps;
     let hw = &ctl.hw;
     let mut out = String::new();
-    let _ = writeln!(out, "predator-lite {} status (read-only)", env!("CARGO_PKG_VERSION"));
+    let _ = writeln!(out, "rusty-predator {} status (read-only)", env!("CARGO_PKG_VERSION"));
     let _ = writeln!(out, "capability detection: {detect_ms} ms");
     let _ = writeln!(
         out,
@@ -130,7 +130,7 @@ mod tests {
     fn checked_report(hw: Mock) -> (String, Mock) {
         let (text, hw) = super::report(hw);
         for section in [
-            "predator-lite ",
+            "rusty-predator ",
             "capability detection: ",
             "fan slots: ",
             "sensors (",

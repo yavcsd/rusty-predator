@@ -1,12 +1,30 @@
 # Shared names and helpers for the setup scripts in this folder. Not meant to be run directly.
 
 # Scheduled tasks created by the scripts.
-$ButtonTaskName    = 'Predator Lite (button)'   # on demand, started by the PredatorSense button
-$AutostartTaskName = 'Predator Lite'            # at logon, starts the app in the tray
+$ButtonTaskName    = 'Rusty Predator (button)'   # on demand, started by the PredatorSense button
+$AutostartTaskName = 'Rusty Predator'            # at logon, starts the app in the tray
+
+# Names used up to 0.1.1, when the app was called Predator Lite. The scripts clean them up.
+$OldButtonTaskName    = 'Predator Lite (button)'
+$OldAutostartTaskName = 'Predator Lite'
+$OldButtonShortcut    = Join-Path $env:LOCALAPPDATA 'PredatorLite\PredatorSense button.lnk'
+
+function Remove-OldTask([string]$Name) {
+    if (Get-ScheduledTask -TaskName $Name -ErrorAction SilentlyContinue) {
+        Unregister-ScheduledTask -TaskName $Name -Confirm:$false
+        Write-Host "old task:  '$Name' removed"
+    }
+}
+
+function Remove-OldButtonShortcut {
+    if (Test-Path $OldButtonShortcut) { Remove-Item $OldButtonShortcut; Write-Host 'old shortcut removed' }
+    $dir = Split-Path $OldButtonShortcut
+    if ((Test-Path $dir) -and -not (Get-ChildItem $dir -Force)) { Remove-Item $dir }
+}
 
 # The PredatorSense button sends scan code E0 75. It is remapped to E0 6B, the standard
 # "Launch App 1" key, which Windows can be told to open a shortcut for.
-$ButtonShortcut = Join-Path $env:LOCALAPPDATA 'PredatorLite\PredatorSense button.lnk'
+$ButtonShortcut = Join-Path $env:LOCALAPPDATA 'RustyPredator\PredatorSense button.lnk'
 $LaunchApp1Key  = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AppKey\17'
 $KeyboardLayout = 'HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layout'
 $ButtonScanCode = 0xE075
@@ -14,21 +32,21 @@ $ButtonScanCode = 0xE075
 # Built from a string because PowerShell reads the literal 0xE075E06B as a negative Int32.
 $ButtonRemapEntry = [Convert]::ToUInt32('E075E06B', 16)
 
-# Find predator-lite.exe: next to this folder (release download), or the cargo build output.
-function Find-PredatorLite([string]$Exe) {
+# Find rusty-predator.exe: next to this folder (release download), or the cargo build output.
+function Find-RustyPredator([string]$Exe) {
     if ($Exe) { return (Resolve-Path $Exe).Path }
     $candidates = @(
-        (Join-Path $PSScriptRoot '..\predator-lite.exe'),
-        (Join-Path $PSScriptRoot 'predator-lite.exe'),
-        (Join-Path $PSScriptRoot '..\target\release\predator-lite.exe')
+        (Join-Path $PSScriptRoot '..\rusty-predator.exe'),
+        (Join-Path $PSScriptRoot 'rusty-predator.exe'),
+        (Join-Path $PSScriptRoot '..\target\release\rusty-predator.exe')
     )
     foreach ($c in $candidates) { if (Test-Path $c) { return (Resolve-Path $c).Path } }
-    throw "predator-lite.exe not found. Pass its location: -Exe 'C:\path\to\predator-lite.exe'"
+    throw "rusty-predator.exe not found. Pass its location: -Exe 'C:\path\to\rusty-predator.exe'"
 }
 
 # Settings shared by both tasks: start on battery, keep running on battery, no time limit
 # (Windows' defaults would stop the app after 72 hours or when unplugged).
-function New-PredatorLiteTaskSettings([switch]$Parallel) {
+function New-RustyPredatorTaskSettings([switch]$Parallel) {
     $options = @{ AllowStartIfOnBatteries = $true; DontStopIfGoingOnBatteries = $true; ExecutionTimeLimit = [TimeSpan]::Zero }
     if ($Parallel) { $options.MultipleInstances = 'Parallel' }
     New-ScheduledTaskSettingsSet @options

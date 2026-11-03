@@ -71,8 +71,8 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 
 /// Window class; a second instance finds the running one by it.
-const CLASS: PCWSTR = w!("PredatorLite.Main");
-const TITLE: &str = "Predator Lite";
+const CLASS: PCWSTR = w!("RustyPredator.Main");
+const TITLE: &str = "Rusty Predator";
 
 // Control ids. Each fan group's row uses the same ids offset by `group index * FAN_ID_STRIDE`.
 const FAN_ID_STRIDE: i32 = 10;
@@ -184,7 +184,7 @@ struct App {
     /// When the button was last handled from raw input; the `--toggle` request Explorer sends
     /// for the same press (remapped key) arrives later and must not toggle again.
     predator_key_pressed_at: Option<std::time::Instant>,
-    /// Opt-in diagnostics: `%APPDATA%\PredatorLite\debug` exists -> events go to debug.log.
+    /// Opt-in diagnostics: `%APPDATA%\RustyPredator\debug` exists -> events go to debug.log.
     debug: Option<(std::fs::File, std::time::Instant)>,
     /// GPU mode in use since boot, and the one the firmware will use from the next start (the
     /// running one unless it was switched since Windows started; `None` without a GPU mode switch).
@@ -264,7 +264,7 @@ fn open_debug_log() -> Option<(std::fs::File, std::time::Instant)> {
 /// Restart Windows in a few seconds (GPU mode changes need it).
 fn restart_windows() -> std::io::Result<()> {
     hidden_command("shutdown.exe")
-        .args(["/r", "/t", "5", "/c", "Predator Lite: switching the GPU mode"])
+        .args(["/r", "/t", "5", "/c", "Rusty Predator: switching the GPU mode"])
         .spawn()
         .map(drop)
 }
@@ -1495,11 +1495,12 @@ unsafe fn message_loop(hwnd: HWND) {
 #[must_use]
 pub fn run(mode: StartMode) -> i32 {
     unsafe {
-        let _mutex = CreateMutexW(None, true, w!("Local\\PredatorLite.Instance"));
+        let _mutex = CreateMutexW(None, true, w!("Local\\RustyPredator.Instance"));
         if GetLastError() == ERROR_ALREADY_EXISTS {
             signal_running_instance(mode);
             return 0;
         }
+        settings::migrate_old_folder();
 
         let wmi = match Wmi::connect() {
             Ok(w) => w,

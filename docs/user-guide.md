@@ -1,6 +1,6 @@
 # User guide
 
-<p align="center"><img src="images/main-window.png" alt="Predator Lite main window" width="462"></p>
+<p align="center"><img src="images/main-window.png" alt="Rusty Predator main window" width="462"></p>
 
 - [The window](#the-window)
   - [Monitoring](#monitoring)
@@ -41,7 +41,7 @@ is polled.
 Choosing a fan mode by hand ends Turbo, Balanced or Eco, since those set the fans themselves.
 
 All percentages are real duty cycles. The firmware's own "custom %" isn't (60 % runs the CPU fan
-at about 35 %), so Predator Lite converts through a table measured on the PT515-51. The value in
+at about 35 %), so Rusty Predator converts through a table measured on the PT515-51. The value in
 Monitoring shows what the fan really does.
 
 ### Performance
@@ -59,7 +59,7 @@ Monitoring shows what the fan really does.
     Longer battery life.
   - *Discrete only*: the NVIDIA GPU drives the screen directly. Best game performance.
 
-  The firmware applies the change at the next restart. Predator Lite asks first: switch and
+  The firmware applies the change at the next restart. Rusty Predator asks first: switch and
   restart now, switch and restart later, or cancel and keep the current mode. The note next to the box shows the running mode, or "Restart to switch
   to …" while a change is pending.
 
@@ -118,10 +118,10 @@ Full performance: CPU boost and your GPU level stay. The fans follow a quiet sof
 ### Eco
 
 Lower power and less heat:
-- **CPU:** Turbo Boost is turned off through a power plan named **Predator Lite Eco**. It is a
+- **CPU:** Turbo Boost is turned off through a power plan named **Rusty Predator Eco**. It is a
   copy of your plan with only that setting changed, so your own plan is never modified. When Eco
   ends, your plan is active again. If the app crashes while Eco is on, the Eco plan stays active
-  until Predator Lite starts again, which re-applies Eco if it is still saved as on, or puts your
+  until Rusty Predator starts again, which re-applies Eco if it is still saved as on, or puts your
   plan back if not.
 - **GPU:** the overclock goes to Normal, and the GPU clock is capped at 1000 MHz through
   `nvidia-smi` (configurable, see [settings file](settings-file.md)).
@@ -161,11 +161,11 @@ The status line, or a tray notification if the window is hidden, says when this 
 ## Hardware buttons
 
 - **Turbo button**: the firmware handles this button itself. It flips its turbo flag and GPU
-  level and tells Windows nothing. Predator Lite checks the flag once a second (no measurable
+  level and tells Windows nothing. Rusty Predator checks the flag once a second (no measurable
   CPU) and adds the rest: the Turbo LED and the fans at Max. You can switch this off with
   **Watch Turbo button** in the tray menu (shown on laptops whose firmware has the turbo flag).
 - **PredatorSense button**: opens the window, or hides it if it is already in front. To make it
-  start Predator Lite when the app is closed, see [PredatorSense button](predatorsense-button.md).
+  start Rusty Predator when the app is closed, see [PredatorSense button](predatorsense-button.md).
 
 ## Tray icon
 
@@ -182,7 +182,7 @@ Closing the window only hides it. Use **Exit** to quit.
 
 ## How settings are kept
 
-- **Where:** your choices are saved to `%APPDATA%\PredatorLite\settings.ini` on every change.
+- **Where:** your choices are saved to `%APPDATA%\RustyPredator\settings.ini` on every change.
   See the [settings file reference](settings-file.md).
 - **When they're applied:** at every start and after the laptop wakes from sleep, because the
   firmware may reset fans and lighting.
@@ -195,16 +195,16 @@ Closing the window only hides it. Use **Exit** to quit.
 ## Command line
 
 ```
-predator-lite.exe                  open the window (and the tray icon)
-predator-lite.exe --hidden         start in the tray only
-predator-lite.exe --toggle         show or hide a running instance, or start with the window open
-predator-lite.exe --status FILE    write a read-only hardware report to FILE
+rusty-predator.exe                  open the window (and the tray icon)
+rusty-predator.exe --hidden         start in the tray only
+rusty-predator.exe --toggle         show or hide a running instance, or start with the window open
+rusty-predator.exe --status FILE    write a read-only hardware report to FILE
 ```
 
 Only one instance runs at a time. Starting it again brings the running one to the front.
 
 `--status` is safe to run any time. It only reads: detected features, all sensors, fan modes, the
-raw firmware values. Run it from a command prompt in the Predator Lite folder and accept the
+raw firmware values. Run it from a command prompt in the Rusty Predator folder and accept the
 administrator prompt. The prompt returns at once; the report appears in FILE a moment later.
 Attach it when reporting a problem or a new laptop model.
 
@@ -212,15 +212,15 @@ Attach it when reporting a problem or a new laptop model.
 
 ### Debug log
 
-Create an empty file named `debug` (no extension) in `%APPDATA%\PredatorLite` and restart Predator
-Lite. It then writes button events and decisions to `debug.log` in the same folder. Delete
+Create an empty file named `debug` (no extension) in `%APPDATA%\RustyPredator` and restart Rusty
+Predator. It then writes button events and decisions to `debug.log` in the same folder. Delete
 `debug` to stop.
 
 ### Common problems
 
 - **The Windows key does nothing.** The firmware's Win key lock is on. Check **Win key** in the
   Keyboard section. On the PT515-51 the firmware turns the lock on after a full shutdown (a
-  restart keeps it off). Predator Lite turns it off again when it starts and after sleep, so
+  restart keeps it off). Rusty Predator turns it off again when it starts and after sleep, so
   [start it at logon](installation.md#start-at-logon) to always have the key.
 - **"Access denied" or nothing works.** The app must run as administrator. Accept the UAC prompt,
   or use the [start at logon](installation.md#start-at-logon) task.

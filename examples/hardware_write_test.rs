@@ -1,18 +1,18 @@
 //! Supervised hardware write test. Drives the real `Controller` over WMI, verifies every write
 //! with Get* read-backs, and restores the starting state at the end (also after a failure).
 //!
-//! Run elevated, with Predator Lite closed: `hardware_write_test.exe <report-file>`.
+//! Run elevated, with Rusty Predator closed: `hardware_write_test.exe <report-file>`.
 //! It switches Turbo on and off, runs the fans at Max for a few seconds and briefly turns
 //! keyboard zone 1 red. Not part of the shipped program.
 
-use predator_lite::controller::{part, Backend, Capabilities, Controller};
-use predator_lite::protocol::{
+use rusty_predator::controller::{part, Backend, Capabilities, Controller};
+use rusty_predator::protocol::{
     decode_fan_mode, decode_misc, decode_rgb, decode_turbo_led, format_sensor, FanGroup, FanMode, GpuOc, Method,
     MiscSetting, Rgb, Sensor, FAN_SLOTS, TURBO_LED_ID,
 };
-use predator_lite::settings::Settings;
-use predator_lite::system::power_status;
-use predator_lite::wmi::{init_security, Wmi};
+use rusty_predator::settings::Settings;
+use rusty_predator::system::power_status;
+use rusty_predator::wmi::{init_security, Wmi};
 use std::fmt::Write as _;
 use std::thread::sleep;
 use std::time::{Duration, Instant};

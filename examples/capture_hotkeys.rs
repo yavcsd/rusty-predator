@@ -6,7 +6,7 @@
 mod common;
 
 use common::{capture_for_30s, log, save_log};
-use predator_lite::wmi::{init_security, EventStream};
+use rusty_predator::wmi::{init_security, EventStream};
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
 fn main() {

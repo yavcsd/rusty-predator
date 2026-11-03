@@ -7,8 +7,8 @@
 mod common;
 
 use common::{capture_for_30s, log, save_log};
-use predator_lite::system::size_u32;
-use predator_lite::wmi::{init_security, EventStream};
+use rusty_predator::system::size_u32;
+use rusty_predator::wmi::{init_security, EventStream};
 use windows::core::w;
 use windows::Win32::Foundation::{HANDLE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};

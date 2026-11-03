@@ -1,20 +1,20 @@
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-//! Predator Lite: a small replacement for Acer PredatorSense.
+//! Rusty Predator: a small replacement for Acer PredatorSense.
 //!
 //! Usage:
-//!   predator-lite                 open the window (and tray icon)
-//!   predator-lite --hidden        start in the tray only
-//!   predator-lite --toggle        show/hide a running instance, or start with the window open
-//!   predator-lite --status [FILE] read-only hardware report to FILE (or stdout; but the
+//!   rusty-predator                 open the window (and tray icon)
+//!   rusty-predator --hidden        start in the tray only
+//!   rusty-predator --toggle        show/hide a running instance, or start with the window open
+//!   rusty-predator --status [FILE] read-only hardware report to FILE (or stdout; but the
 //!                                 elevation prompt starts a new process, so stdout is only
 //!                                 seen from an already elevated prompt: pass FILE)
 //!
 //! Needs administrator rights (the BIOS WMI methods refuse other callers); the manifest that
 //! build.rs embeds requires elevation. Everything else lives in the library crate.
 
-use predator_lite::gui::{self, StartMode};
-use predator_lite::{status_report, wmi};
+use rusty_predator::gui::{self, StartMode};
+use rusty_predator::{status_report, wmi};
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_APARTMENTTHREADED};
 
 /// `--status`: write the report; exit code 0 on success, 1 if WMI or the write failed.
@@ -45,7 +45,7 @@ fn main() {
         Some("--toggle") => gui::run(StartMode::Toggle),
         None => gui::run(StartMode::Window),
         Some(_) => {
-            eprintln!("usage: predator-lite [--hidden | --toggle | --status [FILE]]");
+            eprintln!("usage: rusty-predator [--hidden | --toggle | --status [FILE]]");
             2
         }
     };

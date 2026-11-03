@@ -1,19 +1,19 @@
 [package]
-name = "predator-lite"
+name = "rusty-predator"
 version = "0.1.1"
 edition = "2021"
 rust-version = "1.88"
 description = "Tiny PredatorSense replacement for Acer Predator laptops: fans, fan curves, Turbo/Balanced/Eco, GPU, keyboard lighting (BIOS WMI)"
 authors = ["yavcsd"]
 license = "MIT"
-repository = "https://github.com/yavcsd/predator-lite"
+repository = "https://github.com/yavcsd/rusty-predator"
 readme = "README.md"
 keywords = ["acer", "predator", "fan-control", "predatorsense", "windows"]
 categories = ["hardware-support", "command-line-utilities"]
 build = "build.rs"
 
 [[bin]]
-name = "predator-lite"
+name = "rusty-predator"
 path = "src/main.rs"
 # The binary requires elevation (manifest); tests live in the library.
 test = false

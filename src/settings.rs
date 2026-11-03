@@ -1,5 +1,5 @@
 //! What the user chose, and the settings file that keeps it:
-//! `%APPDATA%\PredatorLite\settings.ini`, plain `key=value` lines.
+//! `%APPDATA%\RustyPredator\settings.ini`, plain `key=value` lines.
 //!
 //! Parsing is lenient: unknown keys and bad values fall back to defaults, and keys written by
 //! older versions are still understood (Balanced and Eco used to be "silent" and "quiet", fan
@@ -11,7 +11,7 @@ use crate::protocol::{
     fan_duty_of, Direction, FanMode, GpuOc, KbBacklight, KbEffect, Rgb, KB_MAX_BRIGHTNESS, KB_MAX_SPEED, KB_ZONES,
     USB_CHARGE_FLOORS,
 };
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 /// The user's choices. What is actually sent to the firmware is derived from these by the
@@ -95,11 +95,27 @@ impl Default for Settings {
     }
 }
 
-/// `%APPDATA%\PredatorLite\settings.ini`; `None` if APPDATA is not set.
+/// `%APPDATA%\RustyPredator\settings.ini`; `None` if APPDATA is not set.
 #[must_use]
 pub fn path() -> Option<PathBuf> {
     let base = std::env::var_os("APPDATA")?;
-    Some(PathBuf::from(base).join("PredatorLite").join("settings.ini"))
+    Some(PathBuf::from(base).join("RustyPredator").join("settings.ini"))
+}
+
+/// Move the folder used up to 0.1.1, when the app was called Predator Lite, to its new name.
+/// Call before anything reads the folder.
+pub fn migrate_old_folder() {
+    if let Some(base) = std::env::var_os("APPDATA") {
+        let base = PathBuf::from(base);
+        move_folder_once(&base.join("PredatorLite"), &base.join("RustyPredator"));
+    }
+}
+
+/// A failed move only costs the old settings until the next try, so it is not reported.
+fn move_folder_once(old: &Path, new: &Path) {
+    if !new.exists() {
+        let _ = fs::rename(old, new);
+    }
 }
 
 /// The saved settings, or `None` when there is no settings file (first start).
@@ -253,7 +269,7 @@ pub fn parse(text: &str) -> Settings {
 /// The settings-file text for `s` (current keys only, fan values in duty units).
 #[must_use]
 pub fn serialize(s: &Settings) -> String {
-    let mut out = String::from("[predator-lite]\n");
+    let mut out = String::from("[rusty-predator]\n");
     let mut kv = |k: &str, v: String| {
         out.push_str(k);
         out.push('=');
@@ -637,6 +653,28 @@ mod tests {
     }
 
     #[test]
+    fn old_folder_moves_once_and_never_overwrites() {
+        let dir = std::env::temp_dir().join(format!("RustyPredatorTest{}", std::process::id()));
+        let (old, new) = (dir.join("old"), dir.join("new"));
+        fs::create_dir_all(&old).unwrap();
+        fs::write(old.join("settings.ini"), "first").unwrap();
+
+        move_folder_once(&old, &new);
+        assert!(!old.exists());
+        assert_eq!(fs::read_to_string(new.join("settings.ini")).unwrap(), "first");
+
+        fs::create_dir_all(&old).unwrap();
+        fs::write(old.join("settings.ini"), "second").unwrap();
+        move_folder_once(&old, &new);
+        assert!(old.exists());
+        assert_eq!(fs::read_to_string(new.join("settings.ini")).unwrap(), "first");
+
+        move_folder_once(&dir.join("missing"), &dir.join("other"));
+        assert!(!dir.join("other").exists());
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
     fn bom_before_the_header_is_harmless() {
         let s = parse("\u{feff}[predator-lite]\r\nturbo=1\r\n");
         assert!(s.turbo);
@@ -770,7 +808,7 @@ mod tests {
             assert_eq!(serialize(&parse(&once)), once, "{input:?}");
             assert_eq!(parse(&once), parse(input), "{input:?}");
             let mut lines = once.lines();
-            assert_eq!(lines.next(), Some("[predator-lite]"));
+            assert_eq!(lines.next(), Some("[rusty-predator]"));
             let mut keys: Vec<&str> = lines.map(|l| l.split_once('=').unwrap().0).collect();
             assert!(keys.iter().all(|k| !legacy.contains(k)), "{once}");
             let n = keys.len();

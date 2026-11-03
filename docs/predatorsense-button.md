@@ -1,21 +1,21 @@
 # PredatorSense button
 
-The PredatorSense button above the keyboard opened Acer's app. Predator Lite can use it in two ways:
+The PredatorSense button above the keyboard opened Acer's app. Rusty Predator can use it in two ways:
 
 | | Setup | What the button does |
 |---|---|---|
 | **App running** (in the tray or open) | none | Opens the window, or hides it to the tray if it is already in front |
-| **App closed** | one-time script + restart | Starts Predator Lite with its window open |
+| **App closed** | one-time script + restart | Starts Rusty Predator with its window open |
 
-## While Predator Lite is running
+## While Rusty Predator is running
 
-Nothing to set up. Predator Lite listens to the button directly, through raw keyboard input,
+Nothing to set up. Rusty Predator listens to the button directly, through raw keyboard input,
 whichever window is in front. Press it once to bring the window up, and again to hide it.
 
-If you [start Predator Lite at logon](installation.md#start-at-logon), this is all you need: it is
+If you [start Rusty Predator at logon](installation.md#start-at-logon), this is all you need: it is
 always running in the tray.
 
-## Make the button start Predator Lite when it is closed
+## Make the button start Rusty Predator when it is closed
 
 Windows doesn't know what to do with the PredatorSense button by itself. Its scan code (`E0 75`)
 isn't a standard key. The setup script fixes that:
@@ -24,15 +24,15 @@ isn't a standard key. The setup script fixes that:
    Any remaps you already have are kept.
 2. It makes Launch App 1 open a shortcut. This is for your user only; Windows' default for
    Launch App 1 ("This PC") stays in place for other users.
-3. The shortcut starts a scheduled task, **Predator Lite (button)**, that runs
-   `predator-lite.exe --toggle` with administrator rights, so pressing the button never shows a
+3. The shortcut starts a scheduled task, **Rusty Predator (button)**, that runs
+   `rusty-predator.exe --toggle` with administrator rights, so pressing the button never shows a
    UAC prompt. It runs through a hidden console, so nothing flashes on screen.
-4. `--toggle` starts the app with its window open. If Predator Lite is already running, it just
+4. `--toggle` starts the app with its window open. If Rusty Predator is already running, it just
    shows or hides the window instead of starting a second copy.
 
 ### Install
 
-In an **administrator** PowerShell in the Predator Lite folder (see
+In an **administrator** PowerShell in the Rusty Predator folder (see
 [Running the setup scripts](installation.md#running-the-setup-scripts)):
 
 ```powershell
@@ -42,26 +42,26 @@ powershell -ExecutionPolicy Bypass -File .\tools\install-predatorsense-button.ps
 You should see:
 
 ```
-task:      'Predator Lite (button)' -> C:\Tools\Predator Lite\predator-lite.exe --toggle
-shortcut:  C:\Users\<you>\AppData\Local\PredatorLite\PredatorSense button.lnk
+task:      'Rusty Predator (button)' -> C:\Tools\Rusty Predator\rusty-predator.exe --toggle
+shortcut:  C:\Users\<you>\AppData\Local\RustyPredator\PredatorSense button.lnk
 app key:   Launch App 1 -> shortcut
 remap:     E0 75 -> E0 6B (1 entry in Scancode Map)
 
 Done. Restart Windows to activate the key remap.
 ```
 
-**Restart Windows.** Keyboard remaps are only read at startup. Then close Predator Lite (tray
+**Restart Windows.** Keyboard remaps are only read at startup. Then close Rusty Predator (tray
 icon > Exit) and press the PredatorSense button: the window should appear within a second.
 
-If `predator-lite.exe` isn't next to the `tools` folder, pass its path with
-`-Exe "D:\Apps\predator-lite.exe"`. Run the script again with the new path if you move the
+If `rusty-predator.exe` isn't next to the `tools` folder, pass its path with
+`-Exe "D:\Apps\rusty-predator.exe"`. Run the script again with the new path if you move the
 program later.
 
 ### Limits
 
 - **An administrator window in front.** While an elevated window has focus (Task Manager, an
-  administrator terminal, …), Windows doesn't pass the key to Explorer, so a *closed* Predator
-  Lite can't be started. A *running* one still reacts. Starting the app at logon avoids this
+  administrator terminal, …), Windows doesn't pass the key to Explorer, so a *closed* Rusty
+  Predator can't be started. A *running* one still reacts. Starting the app at logon avoids this
   entirely.
 - **Other models.** The scan code `E0 75` was measured on a Predator Triton 500 (PT515-51). If
   your button sends something else, the remap does nothing. Developers can check with the
@@ -74,7 +74,7 @@ powershell -ExecutionPolicy Bypass -File .\tools\uninstall-predatorsense-button.
 ```
 
 This removes the remap (other remaps are kept), the shortcut and the task. It sets Launch App 1
-back to the Windows default if it still points to the Predator Lite shortcut. Restart Windows to
+back to the Windows default if it still points to the Rusty Predator shortcut. Restart Windows to
 give the button its original scan code back.
 
 ### Troubleshooting
@@ -85,7 +85,7 @@ give the button its original scan code back.
     [BitConverter]::ToString((Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Keyboard Layout').'Scancode Map')
     ```
     The output should contain `6B-E0-75-E0`.
-  - Check that the task works: run `schtasks /run /tn "Predator Lite (button)"`. The app should
+  - Check that the task works: run `schtasks /run /tn "Rusty Predator (button)"`. The app should
     start.
 - **"This PC" opens instead.** The per-user Launch App 1 setting is missing. Run the install
   script again, from the account you use.

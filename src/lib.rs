@@ -1,4 +1,4 @@
-//! Predator Lite library: protocol, controller, settings and Windows front end.
+//! Rusty Predator library: protocol, controller, settings and Windows front end.
 //! Kept separate from `main.rs` so unit tests run without the elevation manifest.
 //!
 //! Layers, bottom up:

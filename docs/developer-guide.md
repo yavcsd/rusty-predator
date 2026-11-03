@@ -10,7 +10,7 @@
 
 ## Code layout
 
-Predator Lite is a library crate (`src/lib.rs`) plus a thin binary (`src/main.rs`). Keeping
+Rusty Predator is a library crate (`src/lib.rs`) plus a thin binary (`src/main.rs`). Keeping
 everything in the library means the unit tests build without the administrator manifest, which
 is embedded only into the binary by `build.rs`.
 
@@ -20,7 +20,7 @@ is embedded only into the binary by `build.rs`.
 | [`src/controller.rs`](../src/controller.rs) | `Controller`: turns `Settings` into firmware calls. Capability detection, Turbo / Balanced / Eco, battery rule, Turbo button, fan curve ticks, rollback on failure. Contains the `mock` firmware and most unit tests. |
 | [`src/settings.rs`](../src/settings.rs) | `Settings` (what the user chose) and the `settings.ini` format: lenient parsing, old keys, migrations. |
 | [`src/fan_curve.rs`](../src/fan_curve.rs) | `FanCurve` (validated points) and `FanTrack` (smoothing, hysteresis, gradual ramp-down). |
-| [`src/eco_limits.rs`](../src/eco_limits.rs) | Eco's Windows-side limits: the "Predator Lite Eco" power plan and the `nvidia-smi` clock cap. |
+| [`src/eco_limits.rs`](../src/eco_limits.rs) | Eco's Windows-side limits: the "Rusty Predator Eco" power plan and the `nvidia-smi` clock cap. |
 | [`src/wmi.rs`](../src/wmi.rs) | COM/WMI plumbing: connecting to `ROOT\WMI`, calling methods with the right argument types, event subscriptions. |
 | [`src/gui.rs`](../src/gui.rs) | The window and tray icon, in plain Win32 (standard controls, no framework), timers, hardware-button input, single-instance handling. |
 | [`src/status_report.rs`](../src/status_report.rs) | `--status`: a read-only report built from `Get*` calls only. |
@@ -58,7 +58,7 @@ stable-x86_64-pc-windows-msvc`).
 cargo fmt                     # rustfmt.toml: 120 columns
 cargo test                    # unit tests: no admin rights, no hardware access
 cargo clippy --all-targets    # perf, style, complexity, pedantic: must be warning-free
-cargo build --release         # target\release\predator-lite.exe
+cargo build --release         # target\release\rusty-predator.exe
 cargo build --release --examples
 ```
 
@@ -66,7 +66,7 @@ cargo build --release --examples
   symbols.
 - `.cargo/config.toml` links the C runtime statically, so the exe runs without the Visual C++
   redistributable.
-- **The release exe can't be rebuilt while Predator Lite is running.** Windows locks it. Exit it
+- **The release exe can't be rebuilt while Rusty Predator is running.** Windows locks it. Exit it
   from the tray first.
 
 ## Research tools
@@ -80,12 +80,12 @@ another model. All of them need an elevated prompt (`target\release\examples\<na
 | `capture_button_inputs` | no | 30 s capture of every source a hardware button could use: all `ROOT\WMI` events, non-typing keys, raw HID input |
 | `capture_hotkeys` | no | 30 s capture of `APGeEvent` events and non-typing keys. Letters, digits and punctuation are never logged. |
 | `watch_turbo_state` | no | Polls the Turbo-related firmware state every 200 ms for 40 s and logs each change |
-| `system_integration_test` | no firmware writes; changes the power plan, restored at the end | Live WMI connection and every read the app makes, the `APGeEvent` subscription, Eco's power plan (created, activated, Turbo Boost off, user plan restored, old plan name renamed, lost record) and the `nvidia-smi` clock lock, all checked with `powercfg`. Close Predator Lite first. |
-| `hardware_write_test` | **yes**, restored at the end | Drives the real `Controller`: Turbo on and off, fans Max and Auto, a zone color. Every write is checked with a read-back. Close Predator Lite first. |
+| `system_integration_test` | no firmware writes; changes the power plan, restored at the end | Live WMI connection and every read the app makes, the `APGeEvent` subscription, Eco's power plan (created, activated, Turbo Boost off, user plan restored, old plan name renamed, lost record) and the `nvidia-smi` clock lock, all checked with `powercfg`. Close Rusty Predator first. |
+| `hardware_write_test` | **yes**, restored at the end | Drives the real `Controller`: Turbo on and off, fans Max and Auto, a zone color. Every write is checked with a read-back. Close Rusty Predator first. |
 | `turbo_button_events` | **yes**, restored | Arms the Turbo key the way PredatorSense does, then listens for events while you press it |
 | `turbo_rearm_probe` | **yes** | Guided experiment: one kind of write after each Turbo-button press, watching whether the firmware re-engages Turbo |
 
-`predator-lite.exe --status report.txt` is the first thing to run on a new machine. It only
+`rusty-predator.exe --status report.txt` is the first thing to run on a new machine. It only
 reads.
 
 ## Adding support for another laptop
@@ -141,6 +141,6 @@ Things that need care on any model:
    parts, e.g. `0.2.0.0`), and add the changes to `CHANGELOG.md`.
 2. Commit, then tag and push: `git tag v<version>` and `git push origin v<version>`.
 3. The [release workflow](../.github/workflows/release.yml) checks that the tag matches
-   `Cargo.toml`, runs the tests, builds `predator-lite.zip` and attaches it to a GitHub release.
-   The zip holds `predator-lite.exe`, `README.md` and `LICENSE` at the top level, and the
+   `Cargo.toml`, runs the tests, builds `rusty-predator.zip` and attaches it to a GitHub release.
+   The zip holds `rusty-predator.exe`, `README.md` and `LICENSE` at the top level, and the
    `tools` folder next to them. The setup scripts find the exe one level up from `tools`.

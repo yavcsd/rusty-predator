@@ -1,4 +1,4 @@
-# Pushing a tag like v0.1.0 builds predator-lite.zip (the exe, the setup scripts, README and
+# Pushing a tag like v0.1.0 builds rusty-predator.zip (the exe, the setup scripts, README and
 # LICENSE) and attaches it to a GitHub release for that tag.
 name: Release
 
@@ -27,11 +27,11 @@ jobs:
       - name: Package
         shell: pwsh
         run: |
-          New-Item -ItemType Directory dist/predator-lite | Out-Null
-          Copy-Item target/release/predator-lite.exe, README.md, LICENSE dist/predator-lite/
-          Copy-Item tools dist/predator-lite/tools -Recurse
-          Compress-Archive -Path dist/predator-lite/* -DestinationPath predator-lite.zip
+          New-Item -ItemType Directory dist/rusty-predator | Out-Null
+          Copy-Item target/release/rusty-predator.exe, README.md, LICENSE dist/rusty-predator/
+          Copy-Item tools dist/rusty-predator/tools -Recurse
+          Compress-Archive -Path dist/rusty-predator/* -DestinationPath rusty-predator.zip
       - uses: softprops/action-gh-release@v2
         with:
-          files: predator-lite.zip
+          files: rusty-predator.zip
           generate_release_notes: true

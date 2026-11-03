@@ -1,26 +1,26 @@
 # Settings file
 
-Predator Lite keeps your choices in **`%APPDATA%\PredatorLite\settings.ini`**, as plain `key=value`
+Rusty Predator keeps your choices in **`%APPDATA%\RustyPredator\settings.ini`**, as plain `key=value`
 lines. The window writes it on every change, so you rarely need to touch it. Editing by hand is
 useful for the fan curves and the Eco GPU cap, which have no controls in the window.
 
 To edit it:
-1. Exit Predator Lite (tray icon > Exit). The app would overwrite your edits on its next change.
+1. Exit Rusty Predator (tray icon > Exit). The app would overwrite your edits on its next change.
 2. Edit the file.
-3. Start Predator Lite again.
+3. Start Rusty Predator again.
 
 Parsing is forgiving:
 - Unknown keys and invalid values are ignored, and the default is used instead.
 - Lines starting with `#`, `;` or `[` are comments.
 - Keys written by pre-release builds are still understood.
 
-If the file is missing, Predator Lite shows the firmware's current state and changes nothing
+If the file is missing, Rusty Predator shows the firmware's current state and changes nothing
 until you change something.
 
 ## Example
 
 ```ini
-[predator-lite]
+[rusty-predator]
 fan_units=duty
 cpu_fan=auto
 gpu_fan=auto
@@ -81,7 +81,7 @@ and Eco over Balanced.
 
 ### Display and system
 
-These three are kept by the firmware itself. Predator Lite reads them from the firmware at start,
+These three are kept by the firmware itself. Rusty Predator reads them from the firmware at start,
 so the values here are only a record of the last state.
 
 | Key | Values | Default | Meaning |

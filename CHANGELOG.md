@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Renamed to Rusty Predator** (it was Predator Lite). The program is now `rusty-predator.exe`
+  and the project is at <https://github.com/yavcsd/rusty-predator>. Settings move to
+  `%APPDATA%\RustyPredator` at the first start. To update, see
+  [the installation guide](docs/installation.md#from-predator-lite-011-or-older).
+
 ## 0.1.1 (2026-10-30)
 
 - **Fixed:** the GPU mode box showed *Discrete only* at start while the laptop ran in Hybrid. The

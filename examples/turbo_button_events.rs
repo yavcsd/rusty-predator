@@ -9,9 +9,9 @@
 mod common;
 
 use common::{capture_for_30s, log, save_log};
-use predator_lite::controller::Backend;
-use predator_lite::protocol::{decode_turbo_led, Method, TURBO_LED_ID, TURBO_LED_OFF, TURBO_LED_ON};
-use predator_lite::wmi::{init_security, EventStream, Wmi};
+use rusty_predator::controller::Backend;
+use rusty_predator::protocol::{decode_turbo_led, Method, TURBO_LED_ID, TURBO_LED_OFF, TURBO_LED_ON};
+use rusty_predator::wmi::{init_security, EventStream, Wmi};
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
 /// Turbo LED state.

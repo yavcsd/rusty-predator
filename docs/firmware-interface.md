@@ -1,8 +1,8 @@
 # Firmware interface
 
-Everything Predator Lite does goes through WMI methods that the laptop's BIOS exposes to Windows
+Everything Rusty Predator does goes through WMI methods that the laptop's BIOS exposes to Windows
 in the `ROOT\WMI` namespace. This page documents the calls as decoded and verified on a
-**Predator Triton 500 (PT515-51), BIOS V1.13**. It is written for developers of Predator Lite and
+**Predator Triton 500 (PT515-51), BIOS V1.13**. It is written for developers of Rusty Predator and
 of other tools. The encodings live in [`src/protocol.rs`](../src/protocol.rs).
 
 How it was decoded:
@@ -71,8 +71,8 @@ slot at bit `16 + 2·slot`: 1 = Auto, 2 = Max, 3 = Custom.
 | CPU fan duty % | 0 (stopped) | 7 | 13 | 19 | 28 | 35 | 46 | 62 | 78 | 100 |
 | GPU fans duty % | 0 | ~6 (estimated) | 11 | 16 | 22 | 31 | 41 | 55 | 74 | 100 |
 
-The response is roughly quadratic, and 0 % stops the fan: it is not a boost over Auto. Predator
-Lite converts the duty you ask for through this table (`protocol::firmware_fan_pct`). The fans
+The response is roughly quadratic, and 0 % stops the fan: it is not a boost over Auto. Rusty
+Predator converts the duty you ask for through this table (`protocol::firmware_fan_pct`). The fans
 take about 6 seconds to settle after a change.
 
 **CoolBoost** (`APGeAction`): get `0x207`, where byte 1 is the state; set `7 | on << 16`.
@@ -88,7 +88,7 @@ take about 6 seconds to settle after a change.
 | Misc index | Meaning |
 |---|---|
 | 1 | Firmware turbo flag (0 / 1) |
-| 2 | GPU mode (MUX): 1 = Hybrid, 2 = Discrete. Applies at the next restart. On the PT515-51 it reads 2 after every start, whichever mode is running, so Predator Lite takes the running mode from the display adapters (Intel GPU present = Hybrid) and always writes this setting. |
+| 2 | GPU mode (MUX): 1 = Hybrid, 2 = Discrete. Applies at the next restart. On the PT515-51 it reads 2 after every start, whichever mode is running, so Rusty Predator takes the running mode from the display adapters (Intel GPU present = Hybrid) and always writes this setting. |
 | 5 | GPU overclock level 0 / 1 / 2 (Normal / Faster / Turbo); reads back as `0x2L` |
 | 6 | Boot animation and sound (0 / 1) |
 | 7–16 | Invalid on the PT515-51. Other models use 7 = CPU overclock, 9/10 = GPU mode support, 0x0A/0x0B = platform profile, 0x0F = Fn lock. |
@@ -97,7 +97,7 @@ Two quirks:
 - **The Turbo button is handled entirely by the firmware.** It flips misc 1 and misc 5 together
   (flag 1 ⟺ GPU level `0x22`) and sends Windows no WMI, keyboard or HID event.
 - **GPU level Turbo is Turbo mode.** Writing a misc value the firmware already holds can act like
-  a Turbo button press, so Predator Lite only writes values that differ.
+  a Turbo button press, so Rusty Predator only writes values that differ.
 
 ## Profile word: `GetGamingProfile` / `SetGamingProfile`
 
@@ -143,7 +143,7 @@ PT515-51 accepts. Any number of seconds is accepted; 0, 30, 60 and 120 were veri
 | Button | What arrives |
 |---|---|
 | PredatorSense | Keyboard scan code `E0 75`, virtual key `0xFF` |
-| Turbo | Nothing. The firmware toggles misc 1 and misc 5 itself, and Predator Lite polls misc 1 once a second. |
+| Turbo | Nothing. The firmware toggles misc 1 and misc 5 itself, and Rusty Predator polls misc 1 once a second. |
 
 ## Not supported on the PT515-51
 

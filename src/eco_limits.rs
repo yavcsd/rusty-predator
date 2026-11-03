@@ -1,8 +1,8 @@
 //! Eco mode's limits on the Windows side.
 //!
-//! CPU: a "Predator Lite Eco" power plan (a copy of the plan that was active the first time) with
+//! CPU: a "Rusty Predator Eco" power plan (a copy of the plan that was active the first time) with
 //! processor Turbo Boost disabled. The user's own plan is never modified: it is recorded in
-//! `%APPDATA%\PredatorLite\eco_prev_plan` and re-activated when Eco ends, also after a crash or a
+//! `%APPDATA%\RustyPredator\eco_prev_plan` and re-activated when Eco ends, also after a crash or a
 //! restart.
 //! GPU: NVIDIA clock cap through `nvidia-smi -lgc` / `-rgc` (laptop GPUs refuse power limits).
 //!
@@ -20,9 +20,11 @@ use windows::Win32::System::Power::{
 };
 
 /// Name of the power plan Eco creates and activates.
-const PLAN_NAME: &str = "Predator Lite Eco";
-/// Name the plan had when Eco was called Quiet; such a plan is renamed instead of duplicated.
-const OLD_PLAN_NAME: &str = "Predator Lite Quiet";
+const PLAN_NAME: &str = "Rusty Predator Eco";
+/// Names the plan had before: up to 0.1.1, and when Eco was called Quiet. Such a plan is renamed
+/// instead of duplicated.
+const OLD_PLAN_NAME: &str = "Predator Lite Eco";
+const OLDER_PLAN_NAME: &str = "Predator Lite Quiet";
 /// File remembering the user's plan while Eco is on, and its name in older versions.
 const PREV_PLAN_FILE: &str = "eco_prev_plan";
 const OLD_PREV_PLAN_FILE: &str = "quiet_prev_plan";
@@ -100,7 +102,7 @@ fn find_eco_plan() -> Option<GUID> {
         }
         match plan_name(&plan).as_deref() {
             Some(PLAN_NAME) => return Some(plan),
-            Some(OLD_PLAN_NAME) => {
+            Some(OLD_PLAN_NAME | OLDER_PLAN_NAME) => {
                 let _ = set_plan_name(&plan, PLAN_NAME);
                 return Some(plan);
             }
@@ -131,9 +133,9 @@ fn configure_eco_plan(plan: &GUID) -> Result<()> {
     }
 }
 
-/// A file in `%APPDATA%\PredatorLite`.
+/// A file in `%APPDATA%\RustyPredator`.
 fn app_data_file(name: &str) -> Option<PathBuf> {
-    Some(PathBuf::from(std::env::var_os("APPDATA")?).join("PredatorLite").join(name))
+    Some(PathBuf::from(std::env::var_os("APPDATA")?).join("RustyPredator").join(name))
 }
 
 /// The user's plan recorded when Eco started (also under the old file name).
@@ -275,14 +277,15 @@ mod tests {
     #[test]
     fn plan_and_file_names_are_distinct() {
         assert_ne!(PLAN_NAME, OLD_PLAN_NAME);
+        assert_ne!(PLAN_NAME, OLDER_PLAN_NAME);
         assert_ne!(PREV_PLAN_FILE, OLD_PREV_PLAN_FILE);
-        assert!(PLAN_NAME.starts_with("Predator Lite") && OLD_PLAN_NAME.starts_with("Predator Lite"));
+        assert!(PLAN_NAME.starts_with("Rusty Predator"));
     }
 
     #[test]
     fn app_data_files_live_in_the_app_folder() {
         if let Some(path) = app_data_file(PREV_PLAN_FILE) {
-            assert!(path.ends_with(r"PredatorLite\eco_prev_plan"), "{path:?}");
+            assert!(path.ends_with(r"RustyPredator\eco_prev_plan"), "{path:?}");
         }
     }
 }

@@ -13,10 +13,10 @@ labels: bug
 
 **Laptop model and BIOS version:**
 
-**Predator Lite version** (release or commit):
+**Rusty Predator version** (release or commit):
 
 **Attachments**
-- Status report: `predator-lite.exe --status report.txt` (read-only).
+- Status report: `rusty-predator.exe --status report.txt` (read-only).
 - If it is about buttons or modes, a debug log: create an empty file named `debug` in
-  `%APPDATA%\PredatorLite`, restart Predator Lite, reproduce the problem, and attach
-  `%APPDATA%\PredatorLite\debug.log`.
+  `%APPDATA%\RustyPredator`, restart Rusty Predator, reproduce the problem, and attach
+  `%APPDATA%\RustyPredator\debug.log`.

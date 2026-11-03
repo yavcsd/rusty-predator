@@ -1,6 +1,6 @@
 ---
 name: Laptop report
-about: Tell us how Predator Lite works on your laptop model (tested or not)
+about: Tell us how Rusty Predator works on your laptop model (tested or not)
 title: "[Laptop] <model, e.g. PH315-54>"
 labels: laptop-support
 ---
@@ -12,7 +12,7 @@ labels: laptop-support
 **Windows version:**
 
 **Status report**
-Run `predator-lite.exe --status report.txt` in an administrator prompt (it only reads the
+Run `rusty-predator.exe --status report.txt` in an administrator prompt (it only reads the
 hardware) and paste the file here or attach it:
 
 ```
