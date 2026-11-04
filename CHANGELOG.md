@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 (2026-11-04)
 
 - **Fixed:** after charging from below 40 % on AC, Turbo and GPU overclock levels stayed refused
   with "Overclocking needs the AC adapter and at least 40% battery" until the next AC change, sleep
