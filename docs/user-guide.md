@@ -158,6 +158,11 @@ Like PredatorSense:
 
 The status line, or a tray notification if the window is hidden, says when this happens.
 
+The battery percentage isn't watched continuously. It is checked when you turn Turbo on or choose
+a GPU overclock level, when the AC adapter is plugged in or removed, after sleep and at start. So
+a GPU overclock paused at low battery comes back at the first of those after the battery reaches
+40 %.
+
 ## Hardware buttons
 
 - **Turbo button**: the firmware handles this button itself. It flips its turbo flag and GPU

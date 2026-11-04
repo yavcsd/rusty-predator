@@ -1377,6 +1377,7 @@ fn start_controller(wmi: Wmi) -> (Controller<Wmi>, bool, String) {
     let saved = settings::load();
     let has_saved_settings = saved.is_some();
     let mut ctl = Controller::new(wmi, caps, settings::Settings::default());
+    ctl.read_power = Some(power_status);
     ctl.limiter = Box::new(WindowsEcoLimiter);
     let (ac, pct) = power_status();
     ctl.power.update(ac, pct);

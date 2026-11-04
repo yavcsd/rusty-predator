@@ -236,6 +236,9 @@ pub enum TurboButton {
     RefusedOnBattery,
 }
 
+/// Returns (on AC, battery percent if known).
+pub type PowerReader = fn() -> (bool, Option<u8>);
+
 /// PredatorSense's AC/battery rule: overclocking (Turbo, GPU Faster) stops on battery or below
 /// 30 % and comes back on AC once the battery is at 40 % again.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -326,6 +329,8 @@ pub struct Controller<B: Backend> {
     pub settings: Settings,
     /// AC and battery state, for the overclocking rule.
     pub power: PowerGate,
+    /// Read when Turbo or a GPU overclock is chosen; `None` keeps `power` as it is.
+    pub read_power: Option<PowerReader>,
     /// Eco's OS-side limits; `NoEcoLimiter` until the app installs the real one.
     pub limiter: Box<dyn EcoLimiter>,
     /// Balanced/Eco fan curve fell back to the firmware's Auto (temperatures unreadable).
@@ -342,6 +347,7 @@ impl<B: Backend> Controller<B> {
             caps,
             settings,
             power: PowerGate::default(),
+            read_power: None,
             limiter: Box::new(NoEcoLimiter),
             curve_fell_back_to_auto: false,
             tracks: Default::default(),
@@ -607,8 +613,11 @@ impl<B: Backend> Controller<B> {
         if level == GpuOc::Turbo {
             return self.set_turbo(true);
         }
-        if level != GpuOc::Normal && !self.power.allowed() {
-            return Err(Error::NeedsAc);
+        if level != GpuOc::Normal {
+            self.refresh_power()?;
+            if !self.power.allowed() {
+                return Err(Error::NeedsAc);
+            }
         }
         self.update_leaving_modes(part::GPU, |s| s.gpu_oc = level)
     }
@@ -624,8 +633,11 @@ impl<B: Backend> Controller<B> {
         if !(self.caps.turbo_led || self.caps.gpu_oc || self.caps.fan_slots != 0) {
             return Err(Error::NotPresent("Turbo"));
         }
-        if on && !self.power.allowed() {
-            return Err(Error::NeedsAc);
+        if on {
+            self.refresh_power()?;
+            if !self.power.allowed() {
+                return Err(Error::NeedsAc);
+            }
         }
         let released = if on { self.release_eco()? } else { false };
         let r = self.update(part::TURBO | part::FANS | part::GPU, |s| {
@@ -639,6 +651,17 @@ impl<B: Backend> Controller<B> {
             self.restore_eco(released);
         }
         r
+    }
+
+    /// Windows sends no event as the battery charges, so choosing an overclock reads the battery
+    /// itself. `on_power` writes the GPU level: the choice may equal the paused one, and `update`
+    /// writes nothing when the settings don't change.
+    fn refresh_power(&mut self) -> Result<()> {
+        if let Some(read) = self.read_power {
+            let (on_ac, battery) = read();
+            self.on_power(on_ac, battery)?;
+        }
+        Ok(())
     }
 
     /// Eco mode on/off. OS limits go first (if Windows refuses, nothing changes), then the
@@ -891,6 +914,12 @@ impl<B: Backend> Controller<B> {
         let on = byte(exec(&self.hw, Method::GetGamingMiscSetting, MiscSetting::Turbo as u64)?, 0) == 1;
         if on == self.settings.turbo {
             return Ok(TurboButton::Unchanged);
+        }
+        // Only the gate: a GPU write here would touch the flag the firmware just set, and both
+        // paths below write the GPU level.
+        if let (true, Some(read)) = (on, self.read_power) {
+            let (on_ac, battery) = read();
+            self.power.update(on_ac, battery);
         }
         // On every failure below the settings stay (or go back to) as they were, so the next
         // poll sees the press again and retries.
@@ -2066,6 +2095,70 @@ mod tests {
         c.hw.take();
         c.set_turbo(true).unwrap();
         assert_eq!(c.hw.take(), []);
+    }
+
+    #[test]
+    fn only_a_turbo_button_press_reads_the_battery() {
+        static READS: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        fn charged_past_40() -> (bool, Option<u8>) {
+            READS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            (true, Some(44))
+        }
+        let reads = || READS.load(std::sync::atomic::Ordering::Relaxed);
+        let (mut c, _) = eco_ctl();
+        c.on_power(true, Some(20)).unwrap();
+        assert!(!c.power.allowed());
+        c.read_power = Some(charged_past_40);
+        assert_eq!(c.poll_turbo_button(), Ok(TurboButton::Unchanged));
+        assert_eq!(reads(), 0);
+        c.hw.replies.borrow_mut().insert((GetGamingMiscSetting, 1), 0x100);
+        assert_eq!(c.poll_turbo_button(), Ok(TurboButton::On));
+        assert_eq!(reads(), 1);
+        assert!(c.settings.turbo && c.power.allowed());
+        // Turning Turbo off needs no check.
+        c.hw.replies.borrow_mut().insert((GetGamingMiscSetting, 1), 0);
+        assert_eq!(c.poll_turbo_button(), Ok(TurboButton::Off));
+        assert_eq!(reads(), 1);
+    }
+
+    #[test]
+    fn turbo_on_uses_the_battery_level_of_that_moment() {
+        let mut c = ctl();
+        c.on_power(true, Some(20)).unwrap();
+        c.read_power = Some(|| (true, Some(44)));
+        assert_eq!(c.set_turbo(true), Ok(()));
+
+        let mut c = ctl();
+        c.read_power = Some(|| (true, Some(20)));
+        assert_eq!(c.set_turbo(true), Err(Error::NeedsAc));
+        assert!(!c.settings.turbo);
+    }
+
+    #[test]
+    fn gpu_overclock_uses_the_battery_level_of_that_moment() {
+        let mut c = ctl();
+        c.on_power(true, Some(20)).unwrap();
+        c.read_power = Some(|| (true, Some(44)));
+        c.hw.take();
+        assert_eq!(c.set_gpu_oc(GpuOc::Faster), Ok(()));
+        assert_eq!(c.settings.gpu_oc, GpuOc::Faster);
+        assert!(c.hw.sets().contains(&(SetGamingMiscSetting, 0x105)));
+
+        // The level saved before the pause: the settings don't change, the firmware must.
+        c.read_power = None;
+        c.on_power(true, Some(20)).unwrap();
+        c.read_power = Some(|| (true, Some(44)));
+        c.hw.take();
+        assert_eq!(c.set_gpu_oc(GpuOc::Faster), Ok(()));
+        assert!(c.hw.sets().contains(&(SetGamingMiscSetting, 0x105)));
+
+        let mut c = ctl();
+        c.read_power = Some(|| (true, Some(20)));
+        assert_eq!(c.set_gpu_oc(GpuOc::Faster), Err(Error::NeedsAc));
+        assert_ne!(c.settings.gpu_oc, GpuOc::Faster);
+        // Normal never reads the battery, so it can't be refused.
+        c.read_power = Some(|| panic!("Normal read the battery"));
+        assert_eq!(c.set_gpu_oc(GpuOc::Normal), Ok(()));
     }
 
     #[test]

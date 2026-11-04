@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Fixed:** after charging from below 40 % on AC, Turbo and GPU overclock levels stayed refused
+  with "Overclocking needs the AC adapter and at least 40% battery" until the next AC change, sleep
+  or restart of the app. Choosing one now checks the battery at that moment.
+
 ## 0.2.0 (2026-11-03)
 
 - **Renamed to Rusty Predator** (it was Predator Lite). The program is now `rusty-predator.exe`
