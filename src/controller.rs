@@ -24,8 +24,8 @@ use crate::protocol::{
     fan_behavior_input, fan_speed_input, kb_backlight_payload, kb_timeout_set_input, lcd_overdrive_set_input,
     misc_input, rgb_zone_input, usb_charge_set_input, win_key_set_input, FanGroup, FanMode, FirmwareError, GpuMode,
     GpuOc, KbBacklight, KbEffect, Method, MiscSetting, Rgb, Sensor, COOLBOOST_GET, FAN_SLOTS, KB_MAX_BRIGHTNESS,
-    KB_MAX_SPEED, KB_TIMEOUTS, KB_TIMEOUT_GET, KB_ZONES, PROFILE_GET, TURBO_LED_ID, TURBO_LED_OFF, TURBO_LED_ON,
-    USB_CHARGE_FLOORS, USB_CHARGE_GET, VALID_TEMP_C,
+    KB_MAX_SPEED, KB_TIMEOUTS, KB_TIMEOUT_GET, KB_ZONES, LAUNCH_MANAGER_OFF, LAUNCH_MANAGER_ON, PROFILE_GET,
+    TURBO_LED_ID, TURBO_LED_OFF, TURBO_LED_ON, USB_CHARGE_FLOORS, USB_CHARGE_GET, VALID_TEMP_C,
 };
 use crate::settings::Settings;
 use std::fmt;
@@ -902,7 +902,8 @@ impl<B: Backend> Controller<B> {
     }
 
     /// The Turbo button makes the firmware flip its turbo flag (misc 1) and GPU level (misc 5)
-    /// by itself, with no event. Compare the flag with our state and complete or undo Turbo.
+    /// by itself; it sends an event only in Launch Manager mode. Run on that event, or polled.
+    /// Compare the flag with our state and complete or undo Turbo.
     ///
     /// # Errors
     /// `Error::Os` when Eco's limits can't be removed, or a firmware or WMI failure (`Error::Hw`,
@@ -950,6 +951,14 @@ impl<B: Backend> Controller<B> {
             return Err(e);
         }
         Ok(if on { TurboButton::On } else { TurboButton::Off })
+    }
+
+    /// Launch Manager mode on or off. While it is on, the Turbo button sends an `APGeEvent`.
+    ///
+    /// # Errors
+    /// A firmware or WMI failure (`Error::Hw`, `Error::Wmi`), e.g. on models without `APGeAction`.
+    pub fn set_turbo_events(&self, on: bool) -> Result<()> {
+        exec(&self.hw, Method::ApgeSetFunction, if on { LAUNCH_MANAGER_ON } else { LAUNCH_MANAGER_OFF }).map(drop)
     }
 
     /// Flip Turbo; returns the new state.
@@ -1553,6 +1562,20 @@ mod tests {
         let sets = c.hw.sets();
         assert!(sets.contains(&(SetGamingFanBehavior, 0x19 | (0b01_01_00_00_11 << 16))));
         assert_eq!(sets.last(), Some(&(SetGamingMiscSetting, 0x105)));
+    }
+
+    #[test]
+    fn turbo_events_switch_launch_manager_mode() {
+        let c = ctl();
+        c.hw.take();
+        c.set_turbo_events(true).unwrap();
+        c.set_turbo_events(false).unwrap();
+        assert_eq!(
+            c.hw.take(),
+            vec![(ApgeSetFunction, 0x0001_01FF_FFFF_FF01), (ApgeSetFunction, 0x0001_00FF_FFFF_FF01)]
+        );
+        *c.hw.fail.borrow_mut() = Some((ApgeSetFunction, 0xE1));
+        assert!(c.set_turbo_events(true).is_err());
     }
 
     #[test]

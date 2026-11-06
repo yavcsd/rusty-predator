@@ -118,7 +118,8 @@ const WM_APP_SHOW: u32 = WM_APP + 3;
 const WM_APP_TOGGLE: u32 = WM_APP + 4;
 const TIMER_SENSORS: usize = 1;
 const SENSOR_PERIOD_MS: u32 = 2000;
-/// The firmware gives no event for the Turbo button, so its flag is read this often (~9 ms/read).
+/// When the firmware refuses Launch Manager mode, the Turbo button gives no event, so its flag is
+/// read this often (~9 ms/read).
 const TIMER_TURBO_BUTTON: usize = 2;
 const TURBO_BUTTON_PERIOD_MS: u32 = 1000;
 /// Balanced/Eco fan curve tick (only while one of them is on, also when hidden in the tray).
@@ -627,16 +628,22 @@ impl App {
         }
     }
 
-    /// Start or stop polling the Turbo button, per the setting.
+    /// Follow the Turbo button, per the setting: by its event in Launch Manager mode, or by
+    /// polling when the firmware refuses that mode. Also run after sleep, in case the firmware
+    /// cleared the mode.
     unsafe fn watch_turbo_button(&self) {
-        if self.ctl.caps.turbo_flag && self.ctl.settings.turbo_button {
+        let want = self.ctl.caps.turbo_flag && self.ctl.settings.turbo_button;
+        // Also sent when not wanted: clears a mode left on by a crash.
+        let events = self.ctl.set_turbo_events(want).is_ok() && want;
+        if want && !events {
             SetTimer(Some(self.hwnd), TIMER_TURBO_BUTTON, TURBO_BUTTON_PERIOD_MS, None);
         } else {
             let _ = KillTimer(Some(self.hwnd), TIMER_TURBO_BUTTON);
         }
     }
 
-    unsafe fn on_turbo_button_timer(&mut self) {
+    /// The Turbo button's event, or a poll tick.
+    unsafe fn on_turbo_button(&mut self) {
         let r = self.ctl.poll_turbo_button();
         let msg = match &r {
             Ok(TurboButton::Unchanged) => return,
@@ -873,18 +880,14 @@ impl App {
         }
     }
 
-    /// Turbo from the button, the tray menu or the Turbo hotkey event (`from_key`: show a
-    /// balloon when hidden).
-    unsafe fn toggle_turbo(&mut self, from_key: bool) {
+    /// Turbo from the window's button or the tray menu.
+    unsafe fn toggle_turbo(&mut self) {
         let r = self.ctl.toggle_turbo();
         let msg = match &r {
             Ok(true) => "Turbo on".to_string(),
             Ok(false) => "Turbo off".to_string(),
             Err(e) => e.to_string(),
         };
-        if from_key {
-            self.notify_if_hidden(&msg);
-        }
         self.done(r.map(drop), &msg);
     }
 
@@ -921,7 +924,7 @@ impl App {
             return;
         }
         match id {
-            ID_TURBO if code == BN_CLICKED_ => self.toggle_turbo(false),
+            ID_TURBO if code == BN_CLICKED_ => self.toggle_turbo(),
             ID_ECO if code == BN_CLICKED_ => self.toggle_eco(),
             ID_BALANCED if code == BN_CLICKED_ => self.toggle_balanced(),
             ID_GPU_OC if code == CBN_SELCHANGE_ => {
@@ -1102,13 +1105,16 @@ impl App {
                 }
             }
         }
+        if resumed {
+            self.watch_turbo_button();
+        }
         self.sync();
     }
 
     /// `WM_APP_HWEVENT`: an `APGeEvent` from the event thread.
     unsafe fn on_hw_event(&mut self, detail0: u8, detail1: u8) {
         match decode_event(&[detail0, detail1]) {
-            Some(HwEvent::TurboKey) => self.toggle_turbo(true),
+            Some(HwEvent::TurboKey) => self.on_turbo_button(),
             Some(HwEvent::Other(a, b)) => self.set_status(&format!("Hotkey event {a}/{b} (not handled)")),
             Some(HwEvent::KbBacklightChanged) | None => {}
         }
@@ -1173,7 +1179,7 @@ impl App {
     unsafe fn on_menu_command(&mut self, id: usize) {
         match id {
             IDM_SHOW => self.show(),
-            IDM_TURBO => self.toggle_turbo(false),
+            IDM_TURBO => self.toggle_turbo(),
             IDM_ECO => self.toggle_eco(),
             IDM_BALANCED => self.toggle_balanced(),
             IDM_TURBO_BUTTON => {
@@ -1218,6 +1224,7 @@ impl App {
         for timer in [TIMER_SENSORS, TIMER_TURBO_BUTTON, TIMER_CURVE] {
             let _ = KillTimer(Some(self.hwnd), timer);
         }
+        let _ = self.ctl.set_turbo_events(false);
         self.ctl.release_modes_on_exit();
     }
 }
@@ -1258,7 +1265,7 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
             LRESULT(0)
         }
         WM_TIMER if wp.0 == TIMER_TURBO_BUTTON => {
-            a.on_turbo_button_timer();
+            a.on_turbo_button();
             LRESULT(0)
         }
         WM_SIZE => {

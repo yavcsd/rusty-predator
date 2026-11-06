@@ -165,10 +165,11 @@ a GPU overclock paused at low battery comes back at the first of those after the
 
 ## Hardware buttons
 
-- **Turbo button**: the firmware handles this button itself. It flips its turbo flag and GPU
-  level and tells Windows nothing. Rusty Predator checks the flag once a second (no measurable
-  CPU) and adds the rest: the Turbo LED and the fans at Max. You can switch this off with
-  **Watch Turbo button** in the tray menu (shown on laptops whose firmware has the turbo flag).
+- **Turbo button**: the firmware handles this button itself and flips its turbo flag and GPU
+  level. Rusty Predator asks the firmware to report each press. It then adds the rest: the Turbo
+  LED and the fans at Max. If the firmware won't report presses, the app checks the flag once a
+  second instead. You can switch this off with **Watch Turbo button** in the tray menu (shown on
+  laptops whose firmware has the turbo flag).
 - **PredatorSense button**: opens the window, or hides it if it is already in front. To make it
   start Rusty Predator when the app is closed, see [PredatorSense button](predatorsense-button.md).
 

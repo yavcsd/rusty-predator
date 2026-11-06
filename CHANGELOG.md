@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Changed:** the Turbo button is now reported by the firmware instead of checked once a second.
+  The app switches on the firmware's Launch Manager mode at start and after sleep, and off at exit.
+  It falls back to checking once a second if the firmware refuses the mode.
+
 ## 0.2.1 (2026-11-04)
 
 - **Fixed:** after charging from below 40 % on AC, Turbo and GPU overclock levels stayed refused

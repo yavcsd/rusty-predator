@@ -501,6 +501,12 @@ pub fn next_gpu_mode(running: GpuMode, pending: Option<u8>) -> GpuMode {
     pending.and_then(GpuMode::from_u8).unwrap_or(running)
 }
 
+/// `SetFunction` inputs for Launch Manager mode (EC bit `LMIB`; function 1, all devices kept,
+/// status, mask 1), as Linux `acer_wmi_enable_lm`. While it is on, the Turbo button sends
+/// `APGeEvent [7, 4, state]`. It can't be read back: `GetFunction(1)` answers `0xE2`.
+pub const LAUNCH_MANAGER_ON: u64 = 0x0001_01FF_FFFF_FF01;
+pub const LAUNCH_MANAGER_OFF: u64 = 0x0001_00FF_FFFF_FF01;
+
 /// CoolBoost (`APGeAction` function 7): Acer's stronger Auto fan curve. PredatorSense reads it
 /// with GetFunction(0x207) and writes it with SetFunction(7 | on << 16)
 /// (`CommonFunction.get_coolboost_state` / `set_coolboost_state`).
@@ -877,8 +883,8 @@ pub fn kb_backlight_payload(kb: &KbBacklight) -> [u8; 16] {
 /// Decoded `APGeEvent.EventDetail` (uint8[8]); only the first two bytes matter.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HwEvent {
-    /// `[7, 4, ..]`: Turbo key event. The PT515-51's Turbo button sends none (see
-    /// `Controller::poll_turbo_button`).
+    /// `[7, 4, state]`: the Turbo button, sent only in Launch Manager mode. The firmware has
+    /// already flipped Turbo (see `Controller::poll_turbo_button`).
     TurboKey,
     /// `[1, _, ..]`: the keyboard backlight changed (e.g. by its hotkey).
     KbBacklightChanged,

@@ -71,7 +71,8 @@ runtime. It was called Predator Lite up to version 0.1.1.
   tools get wrong: LCD overdrive vs. boot animation, the keyboard effect layout, and the
   backlight timeout selector. See [docs/firmware-interface.md](docs/firmware-interface.md).
 - **Quirks handled.**
-  - The Turbo button sends Windows no event, so the app watches the firmware flag cheaply.
+  - The Turbo button sends Windows no event by default. The app turns on the firmware's
+    Launch Manager mode so each press is reported.
   - The PredatorSense button can open the app even when it is closed.
   - The firmware's GPU-level Turbo is treated as Turbo mode, so a saved preference can never
     switch Turbo back on by itself.

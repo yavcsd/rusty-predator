@@ -19,7 +19,7 @@ No Acer code is included in this project.
 |---|---|---|
 | `AcerGamingFunction` | `Get/SetGamingSysInfo`, `…FanBehavior`, `…FanSpeed`, `…LED`, `…RgbKb`, `…KBBacklight`, `…MiscSetting`, `…Profile` | Sensors, fans, Turbo, keyboard, GPU, panel |
 | `APGeAction` | `GetFunction(uiInput)`, `SetFunction(uiInput)` | CoolBoost, keyboard backlight timeout, USB charging when off |
-| `APGeEvent` | event class (`EventDetail`) | Hotkey events (none fire for the buttons on the PT515-51) |
+| `APGeEvent` | event class (`EventDetail`) | Hotkey events: the Turbo button in Launch Manager mode (see [Buttons](#buttons)) |
 | `BatteryControl` | `GetBatteryHealthControlStatus`, `SetBatteryHealthControl`, `GetBattInfoInterface` | Battery health mode; **unsupported** on the PT515-51, temperature only |
 
 - **Arguments:** each method takes one packed integer and returns one: `gmInput` / `gmOutput` on
@@ -94,8 +94,9 @@ take about 6 seconds to settle after a change.
 | 7–16 | Invalid on the PT515-51. Other models use 7 = CPU overclock, 9/10 = GPU mode support, 0x0A/0x0B = platform profile, 0x0F = Fn lock. |
 
 Two quirks:
-- **The Turbo button is handled entirely by the firmware.** It flips misc 1 and misc 5 together
-  (flag 1 ⟺ GPU level `0x22`) and sends Windows no WMI, keyboard or HID event.
+- **The Turbo button is handled by the firmware.** It flips misc 1 and misc 5 together
+  (flag 1 ⟺ GPU level `0x22`). It sends Windows an event only in Launch Manager mode (see
+  [Buttons](#buttons)), never a keyboard or HID event.
 - **GPU level Turbo is Turbo mode.** Writing a misc value the firmware already holds can act like
   a Turbo button press, so Rusty Predator only writes values that differ.
 
@@ -143,7 +144,16 @@ PT515-51 accepts. Any number of seconds is accepted; 0, 30, 60 and 120 were veri
 | Button | What arrives |
 |---|---|
 | PredatorSense | Keyboard scan code `E0 75`, virtual key `0xFF` |
-| Turbo | Nothing. The firmware toggles misc 1 and misc 5 itself, and Rusty Predator polls misc 1 once a second. |
+| Turbo | The firmware toggles misc 1 and misc 5 itself. In Launch Manager mode it then sends `APGeEvent [7, 4, state]`, state 1 = Turbo on; otherwise nothing arrives. |
+
+**Launch Manager mode** (EC bit `LMIB`, the same call as Linux `acer_wmi_enable_lm`): on with
+`APGeAction.SetFunction(0x000101FFFFFFFF01)`, off with `SetFunction(0x000100FFFFFFFF01)`. Both return 0.
+It can't be read back (`GetFunction(1)` answers `0xE2`). Rusty Predator switches it on at start and
+after sleep, and off at exit. It polls misc 1 once a second only when the firmware refuses the mode.
+With the mode on, ACPI also notifies the NVIDIA driver and Intel DPTF of the new level, as a misc 5
+write does. On the test laptop, the first press after switching it on reported state 0 and didn't
+turn Turbo on; the second press did. If Windows shuts down with the app running, the mode may stay
+on; the button keeps working either way.
 
 ## Not supported on the PT515-51
 
@@ -172,7 +182,8 @@ restored after each):
 - Custom fan % against the duty sensors, in 10 % steps.
 
 **Buttons:** the PredatorSense button arrives as `E0 75`. The Turbo button flips the firmware flag
-and GPU level with no event.
+and GPU level. It sends no event by default, and `APGeEvent [7, 4, state]` in Launch Manager mode
+(`examples/turbo_event_test.rs`).
 
 **Boot animation:** switched on from the app and confirmed at power-on; it reads back from misc 6.
 

@@ -83,6 +83,7 @@ another model. All of them need an elevated prompt (`target\release\examples\<na
 | `system_integration_test` | no firmware writes; changes the power plan, restored at the end | Live WMI connection and every read the app makes, the `APGeEvent` subscription, Eco's power plan (created, activated, Turbo Boost off, user plan restored, old plan name renamed, lost record) and the `nvidia-smi` clock lock, all checked with `powercfg`. Close Rusty Predator first. |
 | `hardware_write_test` | **yes**, restored at the end | Drives the real `Controller`: Turbo on and off, fans Max and Auto, a zone color. Every write is checked with a read-back. Close Rusty Predator first. |
 | `turbo_button_events` | **yes**, restored | Arms the Turbo key the way PredatorSense does, then listens for events while you press it |
+| `turbo_event_test` | **yes**, switched off at the end or when its window is closed | Switches Launch Manager mode on, logs `APGeEvent` and Turbo flag changes for 30 s while you press Turbo, then switches it off. `turbo_event_test.exe off` only switches it off. Waits for Rusty Predator to close. |
 | `turbo_rearm_probe` | **yes** | Guided experiment: one kind of write after each Turbo-button press, watching whether the firmware re-engages Turbo |
 
 `rusty-predator.exe --status report.txt` is the first thing to run on a new machine. It only
