@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.2 (2026-11-06)
 
 - **Changed:** the Turbo button is now reported by the firmware instead of checked once a second.
   The app switches on the firmware's Launch Manager mode at start and after sleep, and off at exit.
