@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.3 (2026-11-07)
 
 - **Security:** the start-at-logon and PredatorSense button setups now copy the program to
   `C:\Program Files\Rusty Predator` and run that copy. Before, their tasks ran the program as
