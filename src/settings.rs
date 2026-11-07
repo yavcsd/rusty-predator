@@ -39,7 +39,8 @@ pub struct Settings {
     /// can't be read, and restoring the Static default would replace e.g. an effect PredatorSense
     /// set. Key `kb_restore`.
     pub restore_kb_lighting: bool,
-    /// Watch the physical Turbo button (the firmware handles it without telling Windows).
+    /// Watch the physical Turbo button: by its event in Launch Manager mode, or by polling when
+    /// the firmware refuses that mode.
     /// Key `turbo_button`.
     pub turbo_button: bool,
     /// Eco mode: CPU Turbo Boost off, GPU capped and at Normal, fans on `eco_curve`. Key `eco`.
@@ -114,7 +115,7 @@ pub fn migrate_old_folder() {
 /// A failed move only costs the old settings until the next try, so it is not reported.
 fn move_folder_once(old: &Path, new: &Path) {
     if !new.exists() {
-        let _ = fs::rename(old, new);
+        let _ = crate::system::as_plain_user(|| fs::rename(old, new));
     }
 }
 
@@ -125,18 +126,21 @@ pub fn load() -> Option<Settings> {
     Some(parse(&text))
 }
 
-/// Write via a temporary file so a crash never leaves a half-written config.
+/// Write via a temporary file so a crash never leaves a half-written config. Written with the
+/// user's rights only (`system::as_plain_user`): the user controls this folder.
 ///
 /// # Errors
 /// When `%APPDATA%` is not set, or the folder or file can't be written.
 pub fn save(s: &Settings) -> io::Result<()> {
     let p = path().ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "APPDATA not set"))?;
-    if let Some(dir) = p.parent() {
-        fs::create_dir_all(dir)?;
-    }
-    let tmp = p.with_extension("tmp");
-    fs::write(&tmp, serialize(s))?;
-    fs::rename(&tmp, &p)
+    crate::system::as_plain_user(|| {
+        if let Some(dir) = p.parent() {
+            fs::create_dir_all(dir)?;
+        }
+        let tmp = p.with_extension("tmp");
+        fs::write(&tmp, serialize(s))?;
+        fs::rename(&tmp, &p)
+    })
 }
 
 /// Eco GPU clock caps accepted from the file (MHz), besides 0 = no cap.

@@ -10,7 +10,7 @@
 //! its `EcoLimiter`.
 
 use crate::controller::{EcoLimiter, Error, Result};
-use crate::system::{hidden_command, size_u32, system32_exe};
+use crate::system::{as_plain_user, hidden_command, size_u32, system32_exe};
 use std::path::PathBuf;
 use windows::core::GUID;
 use windows::Win32::Foundation::{LocalFree, ERROR_SUCCESS, HLOCAL, WIN32_ERROR};
@@ -133,7 +133,8 @@ fn configure_eco_plan(plan: &GUID) -> Result<()> {
     }
 }
 
-/// A file in `%APPDATA%\RustyPredator`.
+/// A file in `%APPDATA%\RustyPredator`. Changed only through `system::as_plain_user`: the user
+/// controls this folder.
 fn app_data_file(name: &str) -> Option<PathBuf> {
     Some(PathBuf::from(std::env::var_os("APPDATA")?).join("RustyPredator").join(name))
 }
@@ -149,17 +150,19 @@ fn read_prev_plan() -> Option<GUID> {
 /// Record the user's plan (as 32 hex digits) so it can be restored, even after a crash.
 fn write_prev_plan(plan: &GUID) {
     if let Some(path) = app_data_file(PREV_PLAN_FILE) {
-        if let Some(dir) = path.parent() {
-            let _ = std::fs::create_dir_all(dir);
-        }
-        let _ = std::fs::write(path, format!("{:032x}", plan.to_u128()));
+        let _ = as_plain_user(|| {
+            if let Some(dir) = path.parent() {
+                std::fs::create_dir_all(dir)?;
+            }
+            std::fs::write(&path, format!("{:032x}", plan.to_u128()))
+        });
     }
 }
 
 fn forget_prev_plan() {
     for name in [PREV_PLAN_FILE, OLD_PREV_PLAN_FILE] {
         if let Some(path) = app_data_file(name) {
-            let _ = std::fs::remove_file(path);
+            let _ = as_plain_user(|| std::fs::remove_file(path));
         }
     }
 }

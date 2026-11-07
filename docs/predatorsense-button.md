@@ -26,7 +26,9 @@ isn't a standard key. The setup script fixes that:
    Launch App 1 ("This PC") stays in place for other users.
 3. The shortcut starts a scheduled task, **Rusty Predator (button)**, that runs
    `rusty-predator.exe --toggle` with administrator rights, so pressing the button never shows a
-   UAC prompt. It runs through a hidden console, so nothing flashes on screen.
+   UAC prompt. It runs a copy in `C:\Program Files\Rusty Predator`, where only administrators can
+   write, so no other program can swap it out. It runs through a hidden console, so nothing
+   flashes on screen.
 4. `--toggle` starts the app with its window open. If Rusty Predator is already running, it just
    shows or hides the window instead of starting a second copy.
 
@@ -42,7 +44,8 @@ powershell -ExecutionPolicy Bypass -File .\tools\install-predatorsense-button.ps
 You should see:
 
 ```
-task:      'Rusty Predator (button)' -> C:\Tools\Rusty Predator\rusty-predator.exe --toggle
+program:   C:\Program Files\Rusty Predator\rusty-predator.exe
+task:      'Rusty Predator (button)' -> C:\Program Files\Rusty Predator\rusty-predator.exe --toggle
 shortcut:  C:\Users\<you>\AppData\Local\RustyPredator\PredatorSense button.lnk
 app key:   Launch App 1 -> shortcut
 remap:     E0 75 -> E0 6B (1 entry in Scancode Map)
@@ -54,8 +57,8 @@ Done. Restart Windows to activate the key remap.
 icon > Exit) and press the PredatorSense button: the window should appear within a second.
 
 If `rusty-predator.exe` isn't next to the `tools` folder, pass its path with
-`-Exe "D:\Apps\rusty-predator.exe"`. Run the script again with the new path if you move the
-program later.
+`-Exe "D:\Apps\rusty-predator.exe"`. Run the script again after updating the program, so the
+copy in `C:\Program Files\Rusty Predator` is updated too.
 
 ### Limits
 

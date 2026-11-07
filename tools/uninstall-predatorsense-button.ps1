@@ -6,7 +6,9 @@ Undo install-predatorsense-button.ps1.
 .DESCRIPTION
 Removes the button remap (other keyboard remaps are kept), sets Launch App 1 back to the Windows
 default if it still points to the Rusty Predator shortcut, and deletes the shortcut and the
-"Rusty Predator (button)" task. Restart Windows afterwards to restore the original key.
+"Rusty Predator (button)" task. The copy in "C:\Program Files\Rusty Predator" is deleted once
+the start-at-logon task doesn't use it either. Restart Windows afterwards to restore the original
+key.
 #>
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
@@ -34,5 +36,6 @@ if (Get-ScheduledTask -TaskName $ButtonTaskName -ErrorAction SilentlyContinue) {
     Unregister-ScheduledTask -TaskName $ButtonTaskName -Confirm:$false
     Write-Host 'task:      removed'
 }
+Remove-InstalledCopy
 Write-Host ''
 Write-Host 'Done. Restart Windows to restore the original key.'

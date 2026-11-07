@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- **Security:** the start-at-logon and PredatorSense button setups now copy the program to
+  `C:\Program Files\Rusty Predator` and run that copy. Before, their tasks ran the program as
+  administrator from wherever it was unzipped, where other programs could replace it. Run the
+  install scripts again to move existing setups over.
+- **Security:** the settings file, `debug.log` and Eco's saved power plan in
+  `%APPDATA%\RustyPredator` are now written with the user's own rights, without administrator
+  rights. Any program running as the user can redirect that folder, and the button task starts the
+  app as administrator without a prompt, so such a program could have had it overwrite system
+  files.
+- **Security:** `shutdown.exe` and `nvidia-smi.exe` are now found from the Windows folder that
+  Windows reports, not from the `%SystemRoot%` variable. Any program of the user can set that
+  variable for the button task, which starts the app as administrator without a prompt, so such a
+  program could have had the app run its own program as administrator.
+- **Fixed:** signing out or shutting down now puts the fans back on Auto and removes Eco's limits,
+  as Exit does. Before, Balanced or Eco could leave the fans off with no app to start them.
+- **Fixed:** a Turbo button press made while the app was starting, or while its event connection
+  was being re-established, was missed until the next press.
+- **Removed:** the `turbo_button_events` and `turbo_rearm_probe` research tools, whose results
+  are in the firmware notes.
+
 ## 0.2.2 (2026-11-06)
 
 - **Changed:** the Turbo button is now reported by the firmware instead of checked once a second.

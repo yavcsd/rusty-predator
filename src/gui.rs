@@ -4,8 +4,9 @@
 //! state lives in one `App` reached from the window's `GWLP_USERDATA`; every user action goes
 //! through the `Controller` and ends in `App::done` (status line, save, refresh controls).
 //!
-//! Inputs besides the controls: the tray icon, a WMI event thread (`APGeEvent` hotkeys), a timer
-//! polling the Turbo button, raw keyboard input for the PredatorSense button, `--toggle` /
+//! Inputs besides the controls: the tray icon, a WMI event thread (`APGeEvent` hotkeys, including
+//! the Turbo button in Launch Manager mode), a timer polling the Turbo button when the firmware
+//! refuses that mode, raw keyboard input for the PredatorSense button, `--toggle` /
 //! second-instance messages, and power broadcasts (battery, resume from sleep).
 //!
 //! Resource use: sensors are polled every 2 s only while the window is visible; when hidden in
@@ -65,7 +66,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     MF_SEPARATOR, MF_STRING, MF_UNCHECKED, MSG, NONCLIENTMETRICSW, RI_KEY_BREAK, RI_KEY_E0, SIZE_MINIMIZED,
     SIZE_RESTORED, SPI_GETNONCLIENTMETRICS, SW_HIDE, SW_SHOWNORMAL, SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS,
     TPM_RIGHTBUTTON, WINDOW_EX_STYLE, WINDOW_STYLE, WM_APP, WM_APPCOMMAND, WM_CLOSE, WM_COMMAND, WM_CONTEXTMENU,
-    WM_CTLCOLORSTATIC, WM_DESTROY, WM_DRAWITEM, WM_HSCROLL, WM_INPUT, WM_LBUTTONDBLCLK, WM_LBUTTONUP,
+    WM_CTLCOLORSTATIC, WM_DESTROY, WM_DRAWITEM, WM_ENDSESSION, WM_HSCROLL, WM_INPUT, WM_LBUTTONDBLCLK, WM_LBUTTONUP,
     WM_POWERBROADCAST, WM_RBUTTONUP, WM_SETFONT, WM_SIZE, WM_TIMER, WM_USER, WNDCLASSEXW, WS_CAPTION, WS_CHILD,
     WS_GROUP, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_SYSMENU, WS_TABSTOP, WS_VISIBLE, WS_VSCROLL,
 };
@@ -258,7 +259,8 @@ fn open_debug_log() -> Option<(std::fs::File, std::time::Instant)> {
     if !dir.join("debug").exists() {
         return None;
     }
-    let f = std::fs::OpenOptions::new().create(true).append(true).open(dir.join("debug.log")).ok()?;
+    let open = || std::fs::OpenOptions::new().create(true).append(true).open(dir.join("debug.log"));
+    let f = crate::system::as_plain_user(open).ok()?;
     Some((f, std::time::Instant::now()))
 }
 
@@ -1114,9 +1116,10 @@ impl App {
     /// `WM_APP_HWEVENT`: an `APGeEvent` from the event thread.
     unsafe fn on_hw_event(&mut self, detail0: u8, detail1: u8) {
         match decode_event(&[detail0, detail1]) {
-            Some(HwEvent::TurboKey) => self.on_turbo_button(),
+            Some(HwEvent::TurboKey) if self.ctl.settings.turbo_button => self.on_turbo_button(),
             Some(HwEvent::Other(a, b)) => self.set_status(&format!("Hotkey event {a}/{b} (not handled)")),
-            Some(HwEvent::KbBacklightChanged) | None => {}
+            // TurboKey here: the user turned "Watch Turbo button" off.
+            Some(HwEvent::TurboKey | HwEvent::KbBacklightChanged) | None => {}
         }
     }
 }
@@ -1322,6 +1325,11 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) 
             SetBkMode(HDC(wp.0 as *mut _), TRANSPARENT);
             LRESULT(GetSysColorBrush(COLOR_BTNFACE).0 as isize)
         }
+        // Sign-out and shutdown end the process without WM_DESTROY: release the modes now.
+        WM_ENDSESSION if wp.0 != 0 => {
+            a.on_destroy();
+            LRESULT(0)
+        }
         WM_DESTROY => {
             a.on_destroy();
             PostQuitMessage(0);
@@ -1346,6 +1354,8 @@ fn spawn_event_thread(hwnd: HWND) {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
         loop {
             if let Ok(events) = EventStream::open() {
+                // A press before this subscription gave no event: check the Turbo flag once.
+                let _ = PostMessageW(Some(hwnd), WM_APP_HWEVENT, WPARAM(7), LPARAM(4));
                 while let Ok(detail) = events.next() {
                     if detail.len() >= 2 {
                         let (wp, lp) = (WPARAM(usize::from(detail[0])), LPARAM(isize::from(detail[1])));

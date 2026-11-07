@@ -14,15 +14,18 @@ Make the PredatorSense button open Rusty Predator, even when the app is not runn
 A running Rusty Predator also listens for the button itself, so pressing it shows or hides the
 window. Undo everything with uninstall-predatorsense-button.ps1.
 
+The task runs a copy in "C:\Program Files\Rusty Predator", where only administrators can write.
+Run the script again after updating rusty-predator.exe to refresh that copy.
+
 .PARAMETER Exe
-Path to rusty-predator.exe. By default it is looked up next to this folder (release download)
-or in ..\target\release (built from source).
+Path to rusty-predator.exe to copy. By default it is looked up next to this folder (release
+download) or in ..\target\release (built from source).
 #>
 param([string]$Exe)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
 
-$Exe = Find-RustyPredator $Exe
+$Exe = Install-RustyPredator $Exe
 Remove-OldTask $OldButtonTaskName
 Remove-OldButtonShortcut
 

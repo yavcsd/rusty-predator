@@ -1,19 +1,28 @@
 //! Small Windows helpers shared by the window, Eco's limits and the example tools: starting
 //! System32 programs without a console window, reading the power status, listing the display
-//! adapters, remembering a GPU mode switch until the next restart, and struct sizes for Win32
-//! calls.
+//! adapters, remembering a GPU mode switch until the next restart, writing user files without
+//! administrator rights, and struct sizes for Win32 calls.
 
+use std::ffi::OsString;
+use std::os::windows::ffi::OsStringExt;
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::Command;
-use windows::core::{w, PCWSTR};
-use windows::Win32::Foundation::ERROR_SUCCESS;
+use windows::core::{w, Owned, PCWSTR};
+use windows::Win32::Foundation::{ERROR_SUCCESS, HANDLE};
 use windows::Win32::Graphics::Gdi::{EnumDisplayDevicesW, DISPLAY_DEVICEW};
+use windows::Win32::Security::{
+    CreateRestrictedToken, CreateWellKnownSid, GetTokenInformation, ImpersonateLoggedOnUser, RevertToSelf,
+    SetTokenInformation, TokenOwner, TokenUser, WinBuiltinAdministratorsSid, DISABLE_MAX_PRIVILEGE, PSID,
+    SID_AND_ATTRIBUTES, TOKEN_ADJUST_DEFAULT, TOKEN_DUPLICATE, TOKEN_OWNER, TOKEN_QUERY, TOKEN_USER,
+};
 use windows::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
 use windows::Win32::System::Registry::{
     RegCloseKey, RegCreateKeyExW, RegGetValueW, RegSetValueExW, HKEY, HKEY_LOCAL_MACHINE, KEY_SET_VALUE, REG_DWORD,
     REG_OPTION_VOLATILE, RRF_RT_REG_DWORD,
 };
+use windows::Win32::System::SystemInformation::GetSystemDirectoryW;
+use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
 /// Process creation flag: no console window for the child.
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
@@ -32,11 +41,61 @@ pub const fn size_u32<T>() -> u32 {
     size_of::<T>() as u32
 }
 
-/// Path of a program in `%SystemRoot%\System32`.
+/// Path of a program in the System32 folder.
+///
+/// The folder comes from Windows, not from `%SystemRoot%`: any program of the user can set that
+/// variable (`HKCU\Environment`) for the scheduled tasks that start this program as administrator.
 #[must_use]
 pub fn system32_exe(name: &str) -> PathBuf {
-    let system_root = PathBuf::from(std::env::var_os("SystemRoot").unwrap_or_else(|| "C:\\Windows".into()));
-    system_root.join("System32").join(name)
+    let mut buf = [0u16; 260]; // MAX_PATH
+    let dir = match unsafe { GetSystemDirectoryW(Some(&mut buf)) } {
+        n @ 1..260 => PathBuf::from(OsString::from_wide(&buf[..n as usize])),
+        _ => PathBuf::from(r"C:\Windows\System32"),
+    };
+    dir.join(name)
+}
+
+/// Run `f` as the user without the Administrators group and without privileges, as an
+/// unelevated program of the user would run.
+///
+/// For files in the user's folders (`%APPDATA%\RustyPredator`): the user, and any program
+/// running as the user, controls those paths and `%APPDATA%` itself, and can turn them into links
+/// to system files (a junction to `\RPC Control` plus object-manager symlinks). The scheduled
+/// tasks start this program as administrator without a prompt, so its own rights must not be
+/// used there: as the plain user, a link only reaches files that user can already change.
+///
+/// # Errors
+/// When the restricted token can't be made or used (`f` is not run then), or `f`'s error.
+pub fn as_plain_user<T>(f: impl FnOnce() -> std::io::Result<T>) -> std::io::Result<T> {
+    let token = plain_user_token()?;
+    unsafe { ImpersonateLoggedOnUser(*token)? };
+    let result = f();
+    // A failed revert would leave this thread with fewer rights, never more.
+    let _ = unsafe { RevertToSelf() };
+    result
+}
+
+/// This process's token with the Administrators group deny-only and all privileges removed.
+fn plain_user_token() -> windows::core::Result<Owned<HANDLE>> {
+    unsafe {
+        let mut process = Owned::default();
+        OpenProcessToken(GetCurrentProcess(), TOKEN_DUPLICATE | TOKEN_QUERY | TOKEN_ADJUST_DEFAULT, &raw mut *process)?;
+        let mut admins = [0u32; 17]; // SECURITY_MAX_SID_SIZE bytes, aligned for a SID
+        let admins_sid = PSID(admins.as_mut_ptr().cast());
+        let mut len = size_u32::<[u32; 17]>();
+        CreateWellKnownSid(WinBuiltinAdministratorsSid, None, Some(admins_sid), &raw mut len)?;
+        let disable = [SID_AND_ATTRIBUTES { Sid: admins_sid, Attributes: 0 }];
+        let mut token = Owned::default();
+        CreateRestrictedToken(*process, DISABLE_MAX_PRIVILEGE, Some(&disable), None, None, &raw mut *token)?;
+        // An elevated token's default owner is the Administrators group, which can't own new
+        // files once deny-only: new files are owned by the user instead.
+        let mut user = [0u64; 32]; // TOKEN_USER and the SID it points to, aligned for TOKEN_USER
+        let mut len = 0;
+        GetTokenInformation(*token, TokenUser, Some(user.as_mut_ptr().cast()), size_u32::<[u64; 32]>(), &raw mut len)?;
+        let owner = TOKEN_OWNER { Owner: user.as_ptr().cast::<TOKEN_USER>().read().User.Sid };
+        SetTokenInformation(*token, TokenOwner, (&raw const owner).cast(), size_u32::<TOKEN_OWNER>())?;
+        Ok(token)
+    }
 }
 
 /// A command for a System32 program that runs without a console window.
@@ -136,9 +195,17 @@ mod tests {
     #[test]
     fn system32_exe_is_under_system32() {
         let path = system32_exe("cmd.exe");
-        assert!(path.ends_with(r"System32\cmd.exe"), "{path:?}");
+        // Windows reports the folder as `system32`.
+        assert!(path.to_string_lossy().to_lowercase().ends_with(r"\system32\cmd.exe"), "{path:?}");
         assert!(path.is_absolute(), "{path:?}");
         assert_eq!(system32_exe("nvidia-smi.exe").parent(), path.parent());
+        assert!(path.exists(), "{path:?}");
+        // A user-set %SystemRoot% must not move it.
+        let saved = std::env::var_os("SystemRoot");
+        std::env::set_var("SystemRoot", r"C:\NotWindows");
+        let moved = system32_exe("cmd.exe");
+        std::env::set_var("SystemRoot", saved.unwrap_or_default());
+        assert_eq!(moved, path);
     }
 
     #[test]
@@ -178,5 +245,35 @@ mod tests {
         assert_eq!(read_dword(HKEY_CURRENT_USER, subkey, w!("Missing")), None);
         assert_eq!(unsafe { RegDeleteKeyW(HKEY_CURRENT_USER, subkey) }, ERROR_SUCCESS);
         assert_eq!(read_dword(HKEY_CURRENT_USER, subkey, name), None);
+    }
+
+    #[test]
+    fn as_plain_user_drops_the_administrators_group() {
+        use windows::Win32::Security::CheckTokenMembership;
+        use windows::Win32::System::Threading::{GetCurrentThread, OpenThreadToken};
+        let is_admin = || {
+            let mut sid = [0u32; 17];
+            let sid = PSID(sid.as_mut_ptr().cast());
+            let mut len = size_u32::<[u32; 17]>();
+            let mut member = windows::core::BOOL(1);
+            unsafe {
+                CreateWellKnownSid(WinBuiltinAdministratorsSid, None, Some(sid), &raw mut len).unwrap();
+                CheckTokenMembership(None, sid, &raw mut member).unwrap();
+            }
+            member.as_bool()
+        };
+        // Only meaningful when the tests run elevated; unelevated the group is deny-only already.
+        let file = std::env::temp_dir().join(format!("RustyPredatorPlainUser{}", std::process::id()));
+        let inside = as_plain_user(|| {
+            std::fs::write(&file, "x")?;
+            Ok(is_admin())
+        });
+        assert_eq!(inside.as_ref().ok(), Some(&false), "{inside:?}");
+        assert_eq!(std::fs::read_to_string(&file).ok().as_deref(), Some("x"));
+        std::fs::remove_file(&file).unwrap();
+        // The thread is back on the process token.
+        let mut thread_token = HANDLE::default();
+        assert!(unsafe { OpenThreadToken(GetCurrentThread(), TOKEN_QUERY, true, &raw mut thread_token) }.is_err());
+        assert!(as_plain_user(|| -> std::io::Result<()> { Err(std::io::ErrorKind::Other.into()) }).is_err());
     }
 }

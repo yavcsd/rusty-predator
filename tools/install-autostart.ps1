@@ -9,15 +9,18 @@ administrator rights (no UAC prompt). It may start on battery, keeps running whe
 has no time limit. Keeping the app running is what makes the Turbo button's fans and LED, the
 fan curves and the settings restore after sleep work. Undo with uninstall-autostart.ps1.
 
+The task runs a copy in "C:\Program Files\Rusty Predator", where only administrators can write.
+Run the script again after updating rusty-predator.exe to refresh that copy.
+
 .PARAMETER Exe
-Path to rusty-predator.exe. By default it is looked up next to this folder (release download)
-or in ..\target\release (built from source).
+Path to rusty-predator.exe to copy. By default it is looked up next to this folder (release
+download) or in ..\target\release (built from source).
 #>
 param([string]$Exe)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
 
-$Exe = Find-RustyPredator $Exe
+$Exe = Install-RustyPredator $Exe
 Remove-OldTask $OldAutostartTaskName
 $action    = New-ScheduledTaskAction -Execute $Exe -Argument '--hidden'
 $trigger   = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"

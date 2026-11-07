@@ -28,9 +28,9 @@ Nothing else is needed: no .NET, no Visual C++ redistributable, no driver.
 
 1. Download `rusty-predator.zip` from the
    [Releases page](https://github.com/yavcsd/rusty-predator/releases).
-2. Unzip it into a folder that will stay put, for example `C:\Tools\Rusty Predator`. The optional
-   start-at-logon and button setups point to `rusty-predator.exe` in that folder, so they stop
-   working if you move it.
+2. Unzip it into a folder of your choice, for example `C:\Tools\Rusty Predator`. The optional
+   start-at-logon and button setups copy `rusty-predator.exe` to `C:\Program Files\Rusty Predator`
+   and run that copy, so moving the folder afterwards doesn't break them.
 
 The folder holds:
 
@@ -96,9 +96,14 @@ PowerShell in the Rusty Predator folder (see [Running the setup scripts](#runnin
 powershell -ExecutionPolicy Bypass -File .\tools\install-autostart.ps1
 ```
 
-This registers a scheduled task named **Rusty Predator** that runs `rusty-predator.exe --hidden`
-at logon with administrator rights. It may start on battery, keeps running when unplugged, and
-has no time limit, unlike Windows' defaults for scheduled tasks.
+This copies `rusty-predator.exe` to `C:\Program Files\Rusty Predator` and registers a scheduled
+task named **Rusty Predator** that runs that copy with `--hidden` at logon, with administrator
+rights. It may start on battery, keeps running when unplugged, and has no time limit, unlike
+Windows' defaults for scheduled tasks.
+
+The task runs the copy, not the file you unzipped: it starts with administrator rights and no
+prompt, so it must sit where only administrators can write. Otherwise any program could replace
+it and get administrator rights without asking.
 
 To undo it:
 
@@ -119,13 +124,16 @@ run in an **administrator** PowerShell:
    script policy.
 
 If `rusty-predator.exe` is somewhere else, pass its path: `... -File .\tools\install-autostart.ps1
--Exe "D:\Apps\rusty-predator.exe"`.
+-Exe "D:\Apps\rusty-predator.exe"`. The install scripts copy it to `C:\Program Files\Rusty Predator`.
 
 ## Updating
 
 1. Right-click the tray icon and choose **Exit**.
 2. Replace `rusty-predator.exe` with the new one, in the same folder.
-3. Start it again, or log off and on if you use start at logon.
+3. If you use [start at logon](#start-at-logon) or the
+   [PredatorSense button setup](predatorsense-button.md), run one of their install scripts again.
+   It copies the new version to `C:\Program Files\Rusty Predator`, which both setups use.
+4. Start it again, or log off and on if you use start at logon.
 
 Settings files from pre-release builds are read and converted automatically. That includes fan
 percentages saved before the duty calibration and the old "silent" / "quiet" mode names.
@@ -150,7 +158,8 @@ Your settings carry over: the first start moves `%APPDATA%\PredatorLite` to
    powershell -ExecutionPolicy Bypass -File .\tools\uninstall-autostart.ps1
    powershell -ExecutionPolicy Bypass -File .\tools\uninstall-predatorsense-button.ps1
    ```
-   The button removal needs a restart to give the button back its original scan code.
+   The button removal needs a restart to give the button back its original scan code. Once both
+   are undone, the copy in `C:\Program Files\Rusty Predator` is deleted too.
 2. Set both fan groups to **Auto** if they aren't, then right-click the tray icon and choose
    **Exit**. The firmware keeps the last fan mode after the app is gone.
 3. Delete the Rusty Predator folder and `%APPDATA%\RustyPredator`, which holds `settings.ini`,

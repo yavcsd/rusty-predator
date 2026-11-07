@@ -2,6 +2,10 @@
 <#
 .SYNOPSIS
 Undo install-autostart.ps1: Rusty Predator no longer starts at logon.
+
+.DESCRIPTION
+Removes the "Rusty Predator" task. The copy in "C:\Program Files\Rusty Predator" is deleted once
+the PredatorSense button task doesn't use it either.
 #>
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
@@ -13,3 +17,4 @@ if (Get-ScheduledTask -TaskName $AutostartTaskName -ErrorAction SilentlyContinue
 } else {
     Write-Host "task:      '$AutostartTaskName' was not installed"
 }
+Remove-InstalledCopy

@@ -44,6 +44,37 @@ function Find-RustyPredator([string]$Exe) {
     throw "rusty-predator.exe not found. Pass its location: -Exe 'C:\path\to\rusty-predator.exe'"
 }
 
+# The tasks run the program as administrator without a prompt, so they run a copy where only
+# administrators can write. Next to a user-writable copy, any program could replace it (or put a
+# DLL beside it) and get administrator rights silently.
+$InstallDir   = Join-Path $env:ProgramFiles 'Rusty Predator'
+$InstalledExe = Join-Path $InstallDir 'rusty-predator.exe'
+
+# Copy rusty-predator.exe (found as Find-RustyPredator does) to $InstalledExe; returns that path.
+function Install-RustyPredator([string]$Exe) {
+    $src = Find-RustyPredator $Exe
+    if ($src -ne $InstalledExe) {
+        New-Item -ItemType Directory -Force $InstallDir | Out-Null
+        try { Copy-Item $src $InstalledExe -Force }
+        catch { throw "Could not copy to $InstalledExe ($_). Exit Rusty Predator (tray icon > Exit) and run the script again." }
+    }
+    Write-Host "program:   $InstalledExe"
+    $InstalledExe
+}
+
+# Delete the copy once neither task uses it. A folder holding anything else (e.g. the release
+# unzipped there by hand) is the user's own and stays.
+function Remove-InstalledCopy {
+    if (Get-ScheduledTask -TaskName $AutostartTaskName, $ButtonTaskName -ErrorAction SilentlyContinue) { return }
+    if (-not (Test-Path $InstallDir)) { return }
+    if (@(Get-ChildItem $InstallDir -Force).Count -ne 1 -or -not (Test-Path $InstalledExe)) {
+        Write-Host "program:   $InstallDir left alone (it holds other files)"
+        return
+    }
+    try { Remove-Item $InstallDir -Recurse; Write-Host "program:   $InstallDir removed" }
+    catch { Write-Host "program:   $InstallDir is in use. Exit Rusty Predator, then delete that folder." }
+}
+
 # Settings shared by both tasks: start on battery, keep running on battery, no time limit
 # (Windows' defaults would stop the app after 72 hours or when unplugged).
 function New-RustyPredatorTaskSettings([switch]$Parallel) {
